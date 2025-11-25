@@ -1,6 +1,6 @@
 :root {
-  --primary: #e8451c;
-  --primary-dark: #c73b18;
+  --primary: #ff5a1f;
+  --primary-dark: #e24d18;
   --text: #0f0f0f;
   --muted: #5a5a5a;
   --bg: #0b0b0b;
@@ -9,8 +9,6 @@
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
   --radius: 14px;
   --max-width: 1100px;
-  --hero-image: url("assets/crossandrun-hero.jpg");
-  --texture: url("assets/crossandrun-texture.png");
 }
 
 * {
@@ -138,22 +136,8 @@ main {
 }
 
 .logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
   font-weight: 800;
   letter-spacing: 0.04em;
-  color: #fff;
-}
-
-.logo__image {
-  width: 42px;
-  height: 42px;
-  object-fit: contain;
-}
-
-.logo__text {
-  white-space: nowrap;
 }
 
 .nav {
@@ -193,26 +177,10 @@ main {
   min-height: 85vh;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)), var(--hero-image);
-  background-size: cover;
-  background-position: center;
-  position: relative;
-  overflow: hidden;
+  background: radial-gradient(circle at 20% 20%, rgba(255, 90, 31, 0.18), transparent 40%),
+    radial-gradient(circle at 80% 0%, rgba(226, 77, 24, 0.2), transparent 40%),
+    #0d0d0d;
   scroll-margin-top: 80px;
-}
-
-.hero::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 20% 20%, rgba(232, 69, 28, 0.2), transparent 45%),
-    radial-gradient(circle at 80% 0%, rgba(199, 59, 24, 0.25), transparent 40%);
-  pointer-events: none;
-}
-
-.hero__content {
-  position: relative;
-  z-index: 1;
 }
 
 .hero__content {
@@ -262,20 +230,10 @@ main {
 /* Page hero (serviços) */
 .page-hero {
   padding: 7rem 1.25rem 4rem;
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.92)), var(--hero-image);
-  background-size: cover;
-  background-position: center;
-  position: relative;
+  background: linear-gradient(135deg, rgba(255, 90, 31, 0.22), transparent 45%),
+    radial-gradient(circle at 80% 10%, rgba(255, 90, 31, 0.18), transparent 40%),
+    #0d0d0d;
   scroll-margin-top: 80px;
-}
-
-.page-hero::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 80% 10%, rgba(232, 69, 28, 0.25), transparent 40%),
-    radial-gradient(circle at 10% 0%, rgba(199, 59, 24, 0.2), transparent 45%);
-  pointer-events: none;
 }
 
 .page-hero__content {
@@ -284,8 +242,6 @@ main {
   display: grid;
   gap: 1rem;
   text-align: center;
-  position: relative;
-  z-index: 1;
 }
 
 /* Sobre nós */
@@ -330,51 +286,11 @@ main {
 
 .service {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  overflow: hidden;
 }
 
 .service:hover {
   transform: translateY(-4px);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
-}
-
-.service__media {
-  height: 140px;
-  border-radius: 12px;
-  margin: -0.6rem -0.6rem 0.75rem;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  border: 1px solid var(--border);
-  position: relative;
-  overflow: hidden;
-}
-
-.service__media::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.55));
-}
-
-.service__media--individual {
-  background-image: linear-gradient(120deg, rgba(232, 69, 28, 0.2), rgba(0, 0, 0, 0.35)), url("assets/servico-individual.jpg");
-}
-
-.service__media--grupo {
-  background-image: linear-gradient(120deg, rgba(232, 69, 28, 0.2), rgba(0, 0, 0, 0.35)), url("assets/servico-grupo.jpg");
-}
-
-.service__media--online {
-  background-image: linear-gradient(120deg, rgba(232, 69, 28, 0.2), rgba(0, 0, 0, 0.35)), url("assets/servico-online.jpg");
-}
-
-.service__media--prepos {
-  background-image: linear-gradient(120deg, rgba(232, 69, 28, 0.2), rgba(0, 0, 0, 0.35)), url("assets/servico-prepos.jpg");
-}
-
-.service__media--provas {
-  background-image: linear-gradient(120deg, rgba(232, 69, 28, 0.2), rgba(0, 0, 0, 0.35)), url("assets/servico-provas.jpg");
 }
 
 .service h3 {
