@@ -1,0 +1,20 @@
+{
+  "name": "@assurance-topology/map-adapter",
+  "version": "0.1.0",
+  "description": "Map adapter layer for Assurance Topology",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "echo 'no lint configured'"
+  },
+  "peerDependencies": {
+    "@assurance-topology/render-webgl": "^0.1.0"
+  },
+  "devDependencies": {
+    "@assurance-topology/render-webgl": "^0.1.0",
+    "maplibre-gl": "^4.3.2"
+  }
+}
