@@ -1,0 +1,23 @@
+{
+  "name": "@assurance-topology/wc",
+  "version": "0.1.0",
+  "description": "Web Component wrapper for Assurance Topology",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "echo 'no lint configured'"
+  },
+  "peerDependencies": {
+    "@assurance-topology/core": "^0.1.0",
+    "@assurance-topology/render-webgl": "^0.1.0",
+    "@assurance-topology/map-adapter": "^0.1.0"
+  },
+  "devDependencies": {
+    "@assurance-topology/core": "^0.1.0",
+    "@assurance-topology/render-webgl": "^0.1.0",
+    "@assurance-topology/map-adapter": "^0.1.0"
+  }
+}

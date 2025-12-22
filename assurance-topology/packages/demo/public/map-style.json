@@ -1,0 +1,23 @@
+{
+  "version": 8,
+  "name": "Offline Map",
+  "sources": {
+    "offline": {
+      "type": "image",
+      "url": "/offline-map.svg",
+      "coordinates": [
+        [-180, 85],
+        [180, 85],
+        [180, -85],
+        [-180, -85]
+      ]
+    }
+  },
+  "layers": [
+    {
+      "id": "offline-base",
+      "type": "raster",
+      "source": "offline"
+    }
+  ]
+}

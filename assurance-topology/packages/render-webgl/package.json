@@ -1,0 +1,19 @@
+{
+  "name": "@assurance-topology/render-webgl",
+  "version": "0.1.0",
+  "description": "WebGL renderer for Assurance Topology",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "echo 'no lint configured'"
+  },
+  "peerDependencies": {
+    "@assurance-topology/core": "^0.1.0"
+  },
+  "devDependencies": {
+    "@assurance-topology/core": "^0.1.0"
+  }
+}
