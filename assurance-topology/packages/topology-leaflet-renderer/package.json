@@ -1,0 +1,23 @@
+{
+  "name": "@assurance-topology/topology-leaflet-renderer",
+  "version": "0.1.0",
+  "description": "Leaflet renderer for topology map",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "echo 'no lint configured'"
+  },
+  "dependencies": {
+    "@assurance-topology/topology-core": "^0.1.0",
+    "@assurance-topology/topology-types": "^0.1.0",
+    "leaflet": "^1.9.4"
+  },
+  "devDependencies": {
+    "@assurance-topology/topology-core": "^0.1.0",
+    "@assurance-topology/topology-types": "^0.1.0",
+    "@types/leaflet": "^1.9.18"
+  }
+}
