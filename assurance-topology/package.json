@@ -9,8 +9,9 @@
   ],
   "scripts": {
     "build": "npm run -ws build",
-    "dev": "npm --workspace packages/demo run dev",
-    "lint": "npm run -ws lint"
+    "dev": "npm --workspace packages/sample-app run dev",
+    "lint": "npm run -ws lint",
+    "test": "npm run -ws test --if-present"
   },
   "devDependencies": {
     "typescript": "^5.5.4"

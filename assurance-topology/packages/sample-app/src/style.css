@@ -1,0 +1,12 @@
+@import "leaflet/dist/leaflet.css";
+
+body { margin: 0; font-family: Arial, sans-serif; }
+#app { display: grid; grid-template-columns: 2fr 1fr; height: 100vh; }
+.map-area { position: relative; }
+company-topology-map { display: block; height: 100%; width: 100%; }
+.panel { padding: 12px; border-left: 1px solid #ddd; overflow: auto; }
+.legend { display: grid; gap: 6px; margin: 10px 0; }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+button { padding: 6px 10px; }
+.log { font-family: ui-monospace, monospace; font-size: 12px; background: #f9fafb; padding: 8px; border: 1px solid #ddd; min-height: 100px; }

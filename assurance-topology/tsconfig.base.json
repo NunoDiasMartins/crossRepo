@@ -9,6 +9,14 @@
     "sourceMap": true,
     "strict": true,
     "noUncheckedIndexedAccess": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@assurance-topology/topology-types": ["packages/topology-types/src/index.ts"],
+      "@assurance-topology/topology-core": ["packages/topology-core/src/index.ts"],
+      "@assurance-topology/topology-plugins": ["packages/topology-plugins/src/index.ts"],
+      "@assurance-topology/topology-leaflet-renderer": ["packages/topology-leaflet-renderer/src/index.ts"],
+      "@assurance-topology/topology-webcomponent": ["packages/topology-webcomponent/src/index.ts"]
+    }
   }
 }

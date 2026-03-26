@@ -1,56 +1,126 @@
-# Assurance Topology Monorepo
+# Shared Topology Map (Phase 1)
 
-Framework-agnostic, TypeScript-first topology library for Telco Assurance use cases. Includes a headless core, WebGL renderer, map adapter, web component wrapper, and a demo app.
+This monorepo now includes a reusable, framework-agnostic topology map library exposed as a Web Component, plus a runnable sample app.
 
-## Prerequisites
+## What was built
 
-- Node.js 18+ (ES2022 target)
-- npm 9+
+Phase 1 delivers:
+- Read-only topology visualization (nodes + edges)
+- Alarm overlays on nodes and optional edges
+- Leaflet renderer with configurable OpenStreetMap-compatible tile layer
+- Typed custom events and typed imperative API
+- Minimal plugin model (`readonlyPlugin`, `alarmOverlayPlugin`)
+- Runnable sample app with controls, legend, and event log
+
+## Architecture overview
+
+- **`topology-types`**: Canonical backend-neutral types for graph/alarm/tile config.
+- **`topology-core`**: Shared logic utilities (filtering alarms, bounds calculation).
+- **`topology-leaflet-renderer`**: Leaflet rendering implementation and interaction wiring.
+- **`topology-webcomponent`**: `<company-topology-map>` Custom Element public UI surface.
+- **`topology-plugins`**: Minimal plugin contract + built-in plugins.
+- **`sample-app`**: Vite app demonstrating host integration and events.
+
+Business workflows (Assurance/Inventory specific logic, API calls, routing, persistence) are intentionally outside these shared modules.
+
+## Project/module structure
+
+```
+packages/
+  topology-types/
+  topology-core/
+  topology-leaflet-renderer/
+  topology-webcomponent/
+  topology-plugins/
+  sample-app/
+```
 
 ## Install
-
-From the repo root:
 
 ```bash
 cd assurance-topology
 npm install
 ```
 
-> Note: The environment you run in must have access to the npm registry for dependency installation.
-
-## Build (all packages)
+## Build all packages
 
 ```bash
-cd assurance-topology
 npm run build
 ```
 
-This runs `tsc` for each workspace package.
-
-## Run the demo
+## Run sample app
 
 ```bash
-cd assurance-topology
 npm run dev
 ```
 
-Then open the URL printed by Vite (typically `http://localhost:5173`).
+Then open the URL shown by Vite (typically `http://localhost:5173`).
 
-The demo loads a local offline SVG basemap and generates a large topology (thousands of nodes and dense polylines) to exercise pan/zoom and selection events.
+## Consume from another application
 
-## Package overview
+```ts
+import "@assurance-topology/topology-webcomponent";
+import type { CompanyTopologyMapElement } from "@assurance-topology/topology-webcomponent";
+import type { TopologyGraph, TopologyAlarm, TileLayerConfig } from "@assurance-topology/topology-core";
 
-- `packages/core`: Headless graph store with patch-based updates and overlay separation.
-- `packages/render-webgl`: WebGL2 renderer surface and LOD hooks.
-- `packages/map-adapter`: Map adapter contract and MapLibre implementation.
-- `packages/wc`: `<assurance-topology>` web component with shadow DOM.
-- `packages/demo`: Local Vite demo app (offline basemap, large topology generator).
+const el = document.createElement("company-topology-map") as CompanyTopologyMapElement;
+el.tileLayerConfig = {
+  urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  attribution: "&copy; OpenStreetMap contributors",
+};
+el.setGraph(graph);
+el.setAlarms(alarms);
+```
 
-## Offline map assets
+## Public API (`<company-topology-map>`)
 
-The demo ships a local basemap:
+### Properties
+- `graph: TopologyGraph`
+- `alarms: TopologyAlarm[]`
+- `mode: 'readonly'`
+- `selectedNodeId?: string`
+- `selectedEdgeId?: string`
+- `filters?: AlarmFilter`
+- `tileLayerConfig: TileLayerConfig`
+- `mapConfig?: object`
+- `plugins?: array`
+- `theme?: object`
 
-- `packages/demo/public/offline-map.svg`
-- `packages/demo/public/map-style.json`
+### Events
+- `node-selected`
+- `edge-selected`
+- `alarm-selected`
+- `viewport-changed`
+- `map-ready`
+- `error`
 
-You can swap the style file to point to your own offline tile packs or images.
+### Imperative methods
+- `setGraph(graph)`
+- `setAlarms(alarms)`
+- `focusNode(nodeId)`
+- `focusEdge(edgeId)`
+- `fitToView()`
+- `clearSelection()`
+- `setFilters(filters)`
+
+## Data model
+
+Use canonical, backend-neutral types from `@assurance-topology/topology-types`. Host applications map backend DTOs into these shared types before passing data to the component.
+
+## Leaflet/OpenStreetMap configuration
+
+Base map tiles are passed by `tileLayerConfig`:
+- `urlTemplate`
+- `attribution`
+- `maxZoom?`
+- `subdomains?`
+
+OpenStreetMap is the sample default, but any OSM-compatible provider can be used.
+
+## Known limitations (Phase 1)
+
+- Read-only only; no edit mode
+- No drag/drop or topology mutation tools
+- No backend persistence
+- No product-specific business workflows
+- Basic marker/polyline visualization focused on clarity over advanced styling
