@@ -1,0 +1,301 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  background: #0a1022;
+  color: #eaf0ff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at top, #1a2650, #070b17 65%);
+}
+
+button {
+  border: 1px solid #4f6db8;
+  background: #1c2c56;
+  color: #f6f8ff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.dashboard-demo-app {
+  min-height: 100vh;
+  padding: 16px;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 12px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.title {
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.subtitle {
+  margin-top: 4px;
+  color: #aebce5;
+  max-width: 64ch;
+}
+
+.chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  border: 1px solid #335;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr 1fr;
+  grid-template-areas: "overview incidents timeline";
+  gap: 12px;
+  min-height: calc(100vh - 90px);
+}
+
+.layout.topology-active {
+  grid-template-areas:
+    "overview incidents timeline"
+    "topology topology timeline";
+}
+
+.panel {
+  background: #10182f;
+  border: 1px solid #2e3a63;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.overview-panel { grid-area: overview; }
+.incidents-panel { grid-area: incidents; }
+.topology-panel { grid-area: topology; }
+.timeline-panel { grid-area: timeline; }
+
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.panel h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.panel-note {
+  color: #8ea0cf;
+  font-size: 12px;
+}
+
+.donut-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.donut-card {
+  background: #0b1226;
+  border: 1px solid #243457;
+  border-radius: 12px;
+  padding: 12px 10px;
+  text-align: center;
+}
+
+.donut {
+  width: 92px;
+  height: 92px;
+  margin: 0 auto 10px;
+  border-radius: 50%;
+  background: conic-gradient(var(--accent) var(--angle), #1d2747 var(--angle));
+  display: grid;
+  place-items: center;
+}
+
+.donut-inner {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: #0e1630;
+  display: grid;
+  place-items: center;
+}
+
+.donut-card.good { --accent: #43d9a3; }
+.donut-card.watch { --accent: #ffd166; }
+.donut-card.risk { --accent: #ef476f; }
+
+.impact-strip {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.impact-card {
+  background: #0b1226;
+  border: 1px solid #243457;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.impact-card small {
+  display: block;
+  color: #8ea0cf;
+  margin-bottom: 6px;
+}
+
+.incident-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.incident-card {
+  width: 100%;
+  text-align: left;
+  border-radius: 10px;
+  border: 1px solid #2d3a61;
+  background: #0b1226;
+  padding: 12px;
+}
+
+.incident-card.selected {
+  border-color: #ffd166;
+  background: rgba(255, 209, 102, 0.08);
+}
+
+.incident-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.incident-summary {
+  color: #eaf0ff;
+  margin-bottom: 6px;
+}
+
+.incident-meta {
+  color: #94a4cf;
+  font-size: 0.86rem;
+}
+
+.severity {
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+.severity.high { background: rgba(239, 71, 111, 0.16); color: #ff8da8; }
+.severity.medium { background: rgba(255, 209, 102, 0.12); color: #ffd166; }
+.severity.low { background: rgba(67, 217, 163, 0.12); color: #7ce9c5; }
+
+.inline-actions,
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.topology-caption {
+  color: #9fb0d8;
+}
+
+.topology-svg {
+  width: 100%;
+  min-height: 320px;
+  border-radius: 8px;
+  background: #0c1430;
+}
+
+.node circle {
+  fill: #1f2f63;
+  transition: 0.2s;
+}
+
+.node text {
+  fill: #dfe8ff;
+  font-size: 9px;
+}
+
+.node.selected circle { stroke: #ffd166; stroke-width: 4; }
+.node.neighbor circle { stroke: #4cc9f0; stroke-width: 4; }
+.node.focus circle { fill: #ef476f; }
+
+.link { stroke: #314375; stroke-width: 2; }
+.link.focus { stroke: #ef476f; stroke-width: 3; }
+
+.timeline {
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.event {
+  border-left: 3px solid #4cc9f0;
+  padding: 8px 10px;
+  background: #0b1226;
+  border-radius: 6px;
+}
+
+.event small {
+  color: #94a4cf;
+  display: block;
+}
+
+.event.empty {
+  color: #9fb0d8;
+}
+
+.debug {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #9fb0d8;
+  max-height: 180px;
+  overflow: auto;
+}
+
+@media (max-width: 1100px) {
+  .layout,
+  .layout.topology-active {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "overview"
+      "incidents"
+      "timeline"
+      "topology";
+  }
+
+  .donut-grid,
+  .impact-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

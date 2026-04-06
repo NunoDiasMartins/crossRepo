@@ -1,5 +1,3 @@
-import './styles.css';
-
 const topology = {
   nodes: [
     { id: 'RAN-Cluster-12', x: 70, y: 80, segment: 'transport-west' },
