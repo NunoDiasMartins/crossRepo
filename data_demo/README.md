@@ -1,121 +1,92 @@
-# Backend-Driven Agentic Data Analysis Demo (AG-UI + A2UI)
+# Agentic Data Analysis Workspace Demo (AG-UI + A2UI)
 
-This demo is a **2-tier architecture** where the backend is the source-of-truth agent runtime.
+This folder contains a runnable local demo for an event-driven analytics workspace where the **agent drives the UI**.
 
-- Frontend: React + TypeScript AG-UI event consumer + A2UI renderer
-- Backend: Node + TypeScript agent runtime and analysis pipeline
-- Shared package: contracts/types for AG-UI event payloads and A2UI structures
+## What this demonstrates
 
-## Architecture
+- **AG-UI as first-class runtime loop** using `AbstractAgent` and `RunAgentInput`.
+- **Streaming events** (`run started/finished`, message stream, tool-like step events, state updates).
+- **A2UI-driven rendering**: all visible surfaces are generated as declarative payloads from agent events.
+- **Bidirectional flow**: UI sends AG-UI context events (`filter.changed`, `anomaly.selected`, `action.triggered`) and receives new streamed surfaces.
+- **Replay**: stored AG-UI event stream can rebuild the workspace progressively.
 
-```text
-User action in FE
-  -> POST /api/agent/run or /api/agent/action
-  -> backend agent run (AG-UI style)
-  -> SSE stream emits lifecycle + step + state events
-  -> FE receives events and updates surface registry
-  -> FE renders A2UI surfaces only
-```
-
-## Monorepo layout
-
-```text
-data_demo/
-  apps/
-    server/
-      src/
-        agent/runtimeAgent.ts
-        analysis/pipeline.ts
-        data/{sales_q3.json,campaigns.json}
-        routes/agentRoutes.ts
-        state/sessionStore.ts
-        streaming/sseHub.ts
-        server.ts
-    web/
-      src/
-        client/api.ts
-        renderers/A2UIRenderer.tsx
-        state/useSession.ts
-        App.tsx
-        main.tsx
-        styles.css
-  packages/
-    shared/
-      src/
-        a2ui/helpers.ts
-        events/eventNames.ts
-        types/contracts.ts
-        index.ts
-```
-
-## Setup
+## Install
 
 ```bash
 cd data_demo
 npm install
 ```
 
-## Run
+Required packages include:
 
-In one terminal:
+```bash
+npm install @ag-ui/core @ag-ui/client
+```
+
+## Run
 
 ```bash
 npm run dev
 ```
 
-Or separately:
+Open `http://localhost:5173`.
 
-```bash
-npm run dev:server
-npm run dev:web
-```
+## Demo prompt
 
-- Web: `http://localhost:5173`
-- API/Agent server: `http://localhost:8787`
+Run the scenario with:
 
-## AG-UI usage (FE ↔ BE)
+> Analyze last quarter sales, identify anomalies, and explain what caused them.
 
-- FE starts runs with `POST /api/agent/run` and sends interactions to `POST /api/agent/action`.
-- BE emits streamed events via SSE at `GET /api/agent/stream/:sessionId`.
-- Events include lifecycle (`RUN_STARTED`, `RUN_FINISHED`), stage events, and `state.updated`.
-- Replay is backend-driven by re-emitting saved event log entries.
+The agent streams this step sequence:
 
-## Where backend agent logic lives
+1. `plan.created`
+2. `dataset.loaded`
+3. `transform.applied`
+4. `chart.created`
+5. `anomalies.detected`
+6. `annotations.added`
+7. `explanation.generated`
+8. `suggestion.offered`
 
-- `apps/server/src/agent/runtimeAgent.ts`
-- `apps/server/src/analysis/pipeline.ts`
+## Where AG-UI is implemented
 
-This includes data load, aggregation, anomaly detection, campaign correlation, segmentation, forecast, and stepwise event emission.
+- `src/agent.ts`
+  - `AnalyticsAgent` extends `AbstractAgent` from `@ag-ui/client`.
+  - `run(input: RunAgentInput)` returns a stream (`Observable`) and emits lifecycle + step events.
+  - Uses AG-UI core model types (`Message`, `Context`, `Tool`, `State`) via `src/types.ts`.
 
-## Where A2UI surfaces are generated
+## Where A2UI rendering happens
 
-- Generated in backend agent methods in `runtimeAgent.ts`:
-  - `planSurface`
-  - `datasetSurface` / `trendSurface` / `annotatedDataSurface`
-  - `explanationSurface` / `drillDownSurface`
-  - `forecastSurface` / `segmentSurface`
-  - `controlSurface`
+- Agent emits surface payloads shaped as declarative A2UI JSON in `src/agent.ts`.
+- Frontend keeps a **surface registry** keyed by surface IDs and renders only from payloads in `src/App.tsx` via `A2UIRenderer`.
+- No surface-specific React chart/table hardcoding outside the generic renderer.
 
-## Where A2UI rendering happens (frontend)
+## Required interactive scenarios implemented
 
-- `apps/web/src/renderers/A2UIRenderer.tsx`
-- UI registry and stream handling: `apps/web/src/state/useSession.ts`
+1. **Filter to Europe**
+   - UI sends `filter.changed`
+   - Agent recomputes weekly aggregates + anomaly classification
+   - Agent emits updated `data_surface` and `activity_surface`
 
-Frontend does no analysis computation; it renders based on streamed surfaces only.
+2. **Click anomaly**
+   - UI sends `anomaly.selected`
+   - Agent emits drill-down explanation surface
 
-## Deterministic demo data patterns
+3. **Forecast**
+   - UI sends `action.triggered` (`forecast`)
+   - Agent emits forecast chart surface
 
-Backend dataset includes:
-- strong positive spike at `2025-W31` tied to **Campaign A Launch**
-- negative dip at `2025-W33` tied to inventory/checkout incident
-- ambiguous anomaly at `2025-W35` tied to creative test
+4. **Replay**
+   - UI sends `action.triggered` (`replay`)
+   - Agent returns stored event stream
+   - UI replays state updates over time to rebuild surfaces
 
-## Presenter demo script (concise)
+## Data
 
-1. Click **Start backend analysis run**.
-2. Narrate progressive streamed stages (plan → dataset → transform → chart → anomalies → explanations → suggestions).
-3. Change filters (region/channel/category/sensitivity) and observe backend-driven recomputation.
-4. Click a chart anomaly point to request cause drill-down.
-5. Click **Forecast next quarter** for projected view + assumptions.
-6. Click **Segment by region** for segmented summary.
-7. Click **Replay analysis** to re-stream prior backend event history.
+- `src/data/sales_q3.json`
+- `src/data/campaigns.json`
+
+Includes:
+- Campaign-driven spike (`2025-W31`)
+- Negative dip (`2025-W33`)
+- Ambiguous anomaly (`2025-W35`)
