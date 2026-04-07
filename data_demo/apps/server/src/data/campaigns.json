@@ -1,0 +1,26 @@
+[
+  {
+    "week": "2025-W31",
+    "campaign": "Campaign A Launch",
+    "region": "Europe",
+    "channel": "Online",
+    "impact": "positive_spike",
+    "note": "Major launch bundle and paid media burst drove exceptional demand."
+  },
+  {
+    "week": "2025-W33",
+    "campaign": "Inventory and Checkout Incident",
+    "region": "all",
+    "channel": "all",
+    "impact": "negative_dip",
+    "note": "Payment gateway outage plus low inventory caused revenue suppression."
+  },
+  {
+    "week": "2025-W35",
+    "campaign": "Creative Test B",
+    "region": "North America",
+    "channel": "Online",
+    "impact": "ambiguous",
+    "note": "Moderate movement likely from mixed pricing and seasonality effects."
+  }
+]

@@ -1,0 +1,18 @@
+{
+  "name": "data-demo-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace @demo/server\" \"npm run dev --workspace @demo/web\"",
+    "dev:server": "npm run dev --workspace @demo/server",
+    "dev:web": "npm run dev --workspace @demo/web",
+    "build": "npm run build --workspace @demo/shared && npm run build --workspace @demo/server && npm run build --workspace @demo/web"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

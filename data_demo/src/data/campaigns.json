@@ -1,0 +1,26 @@
+[
+  {
+    "week": "2025-W31",
+    "campaign": "Back-to-School Blitz",
+    "region": "Europe",
+    "channel": "Paid Social",
+    "spend": 42000,
+    "impact": "positive_spike"
+  },
+  {
+    "week": "2025-W33",
+    "campaign": "Checkout Migration",
+    "region": "all",
+    "channel": "Platform",
+    "spend": 0,
+    "impact": "negative_dip"
+  },
+  {
+    "week": "2025-W35",
+    "campaign": "Pricing Test B",
+    "region": "North America",
+    "channel": "Lifecycle",
+    "spend": 9000,
+    "impact": "ambiguous"
+  }
+]
