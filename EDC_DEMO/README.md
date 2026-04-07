@@ -314,3 +314,26 @@ The user journey is:
 4. watch the agent reveal topology, expand service impact, and request approval
 
 This version is useful when you want the audience to see the topology as an agent-driven reveal rather than as the opening frame.
+
+## Fifth Demo Path
+
+For an intent-driven service order story that makes AG-UI and A2UI protocol behavior visible, use:
+
+```text
+http://localhost:8000/intent-order-demo
+```
+
+### Intent Order Demo Theme
+
+This route shows an operator submitting a realistic TMF641-style draft order with Autonomous Network intent, then watching the lifecycle trigger TMF921-style intent validation, service mapping, and a pre-approval impact topology.
+
+The user journey is:
+
+1. review the draft service order
+2. click **Submit order**
+3. watch the order canvas move from draft to submitted and acknowledged
+4. see the intent registry return an `IntentRef`
+5. watch A2UI mutations add service characteristics and preview the impacted topology
+6. approve, reject, or modify provisioning before services are created
+
+The demo intentionally emphasizes visual UI mutation over agent text, so the audience can see how AG-UI/A2UI support transparent, governed, human-in-the-loop orchestration.

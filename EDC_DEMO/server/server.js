@@ -9,11 +9,13 @@ const telecomClients = new Set();
 const genericClients = new Set();
 const retailClients = new Set();
 const dashboardClients = new Set();
+const intentOrderClients = new Set();
 let seq = 0;
 let lastNodeId = 'RAN-Cluster-12';
 let lastBusinessNodeId = 'Payments';
 let lastRetailMissionId = 'weeknight-dinner';
 let lastDashboardIncidentId = 'INC-4412';
+let lastIntentOrderMode = 'valid';
 
 const incidents = [
   { id: 'INC-4412', severity: 'High', status: 'Open', relatedNode: 'RAN-Cluster-12' },
@@ -195,6 +197,64 @@ const dashboardIncidents = {
   }
 };
 
+const intentOrderScenario = {
+  valid: {
+    serviceOrderId: 'SO-641-2026-00419',
+    intentId: 'INT-AN-SSO-4194',
+    customer: 'Nordic Logistics Group',
+    requestedService: 'Enterprise Connectivity',
+    serviceSpecification: 'Intent-Driven Enterprise Transport',
+    strategy: 'Autonomous Network',
+    portfolioObjective: 'Simplified Service Orchestration',
+    businessIntent: 'Create an enterprise connectivity service that supports autonomous operations, reduces manual orchestration steps, and enables closed-loop assurance for a telecommunications service provider.',
+    mappedCharacteristics: [
+      { name: 'automationLevel', value: 'closed-loop-ready' },
+      { name: 'orchestrationMode', value: 'simplified-service-orchestration' },
+      { name: 'assurancePolicy', value: 'proactive-monitoring' },
+      { name: 'resilienceProfile', value: 'dual-path' },
+      { name: 'operationsImpact', value: 'reduced-manual-configuration' }
+    ],
+    services: [
+      { id: 'SVC-EC-001', name: 'Enterprise Transport Access', spec: 'ServiceSpecA', state: 'Designed', intentRef: 'INT-AN-SSO-4194' },
+      { id: 'SVC-ASSURE-002', name: 'Closed-loop Assurance Policy', spec: 'ServiceSpecB', state: 'Ready', intentRef: 'INT-AN-SSO-4194' }
+    ],
+    notification: 'TMF notification prepared for order and service lifecycle changes. IntentRef is carried without exposing the full business intent downstream.',
+    topology: {
+      nodes: [
+        { id: 'Enterprise Site A', type: 'customer-edge', tone: 'customer', x: 80, y: 110 },
+        { id: 'Access NNI', type: 'access', tone: 'active', x: 230, y: 80 },
+        { id: 'Transport Core', type: 'transport', tone: 'active', x: 390, y: 105 },
+        { id: 'Edge Cloud', type: 'edge', tone: 'watch', x: 555, y: 75 },
+        { id: 'Assurance Loop', type: 'closed-loop', tone: 'policy', x: 555, y: 205 },
+        { id: 'Service Registry', type: 'registry', tone: 'registry', x: 390, y: 220 }
+      ],
+      links: [
+        { source: 'Enterprise Site A', target: 'Access NNI', label: 'access handoff', tone: 'active' },
+        { source: 'Access NNI', target: 'Transport Core', label: 'resilient path', tone: 'active' },
+        { source: 'Transport Core', target: 'Edge Cloud', label: 'enterprise transport', tone: 'active' },
+        { source: 'Transport Core', target: 'Service Registry', label: 'IntentRef binding', tone: 'registry' },
+        { source: 'Edge Cloud', target: 'Assurance Loop', label: 'closed-loop policy', tone: 'policy' },
+        { source: 'Service Registry', target: 'Assurance Loop', label: 'assurance subscription', tone: 'policy' }
+      ],
+      impacts: [
+        { label: 'Domains touched', value: 'Access, Transport, Edge, Assurance' },
+        { label: 'Manual steps reduced', value: 'Design, assurance policy, service binding' },
+        { label: 'Governance gate', value: 'Operator approval before provisioning' }
+      ]
+    }
+  },
+  invalid: {
+    serviceOrderId: 'SO-641-2026-00420',
+    intentId: 'INT-AN-SSO-4195',
+    customer: 'Nordic Logistics Group',
+    requestedService: 'Enterprise Connectivity',
+    serviceSpecification: 'Intent-Driven Enterprise Transport',
+    strategy: 'Autonomous Network',
+    portfolioObjective: 'Simplified Service Orchestration',
+    businessIntent: 'Create a fully autonomous cross-domain service with no approval gate and unspecified assurance policy.',
+    reason: 'Intent violates governance policy: provisioning autonomy is requested without an operator approval control and assurance policy scope.'
+  }
+};
 const mimeTypes = {
   '.html': 'text/html',
   '.js': 'application/javascript',
@@ -399,6 +459,102 @@ async function streamDashboardApproval(action) {
   emit(dashboardClients, { kind: 'ag-ui', type: 'agent.completed', payload: { summary: `Dashboard-led analysis completed with operator action: ${action}.` } });
 }
 
+async function streamIntentOrder(mode) {
+  const scenario = intentOrderScenario[mode] ?? intentOrderScenario.valid;
+  const baseOrder = {
+    id: scenario.serviceOrderId,
+    state: 'Submitted',
+    customer: scenario.customer,
+    requestedService: scenario.requestedService,
+    serviceSpecification: scenario.serviceSpecification,
+    requestedStartDate: '2026-04-15T09:00:00Z',
+    serviceSite: 'Stockholm DC-02',
+    slaProfile: 'Enterprise Gold',
+    orchestrationDomain: 'Transport and Edge',
+    approvalPolicy: 'Human approval required before provisioning',
+    characteristics: [
+      { name: 'customerSegment', value: 'enterprise-logistics' },
+      { name: 'serviceObjective', value: 'intent-driven-automation' }
+    ],
+    intent: {
+      id: scenario.intentId,
+      strategy: scenario.strategy,
+      portfolioObjective: scenario.portfolioObjective,
+      description: scenario.businessIntent
+    }
+  };
+
+  emit(intentOrderClients, { kind: 'ag-ui', type: 'user.intent.received', payload: { intent: 'SubmitIntentDrivenServiceOrder', orderId: baseOrder.id } });
+  await sleep(450);
+  emit(intentOrderClients, { kind: 'a2ui', type: 'surface.updateDataModel', target: 'order', payload: { order: baseOrder } });
+  await sleep(500);
+  emit(intentOrderClients, { kind: 'ag-ui', type: 'agent.plan.created', payload: { steps: ['receive TMF641 order submission', 'validate intent through TMF921 registry', 'map intent to service characteristics', 'visualize impacted service topology before approval', 'ask for approval before provisioning'] } });
+  await sleep(550);
+  emit(intentOrderClients, { kind: 'ag-ui', type: 'tool.call.started', payload: { tool: 'TMF921.IntentRegistry.validate', args: { intentId: scenario.intentId } } });
+  await sleep(600);
+
+  if (mode === 'invalid') {
+    emit(intentOrderClients, { kind: 'ag-ui', type: 'tool.call.completed', payload: { tool: 'TMF921.IntentRegistry.validate', result: 'failed', reason: scenario.reason } });
+    await sleep(450);
+    emit(intentOrderClients, { kind: 'a2ui', type: 'surface.updateDataModel', target: 'intentRegistry', payload: { registry: { intentId: scenario.intentId, status: 'Rejected', reason: scenario.reason } } });
+    await sleep(450);
+    emit(intentOrderClients, { kind: 'a2ui', type: 'surface.updateDataModel', target: 'order', payload: { order: { ...baseOrder, state: 'Rejected', rejectionReason: scenario.reason } } });
+    await sleep(400);
+    emit(intentOrderClients, { kind: 'ag-ui', type: 'notification.emitted', payload: { channel: 'TMF641', message: 'Order rejected before provisioning because the intent failed governance validation.' } });
+    await sleep(350);
+    emit(intentOrderClients, { kind: 'ag-ui', type: 'run.completed', payload: { summary: 'Intent validation rejected the order and provisioning was blocked.' } });
+    return;
+  }
+
+  emit(intentOrderClients, { kind: 'ag-ui', type: 'tool.call.completed', payload: { tool: 'TMF921.IntentRegistry.validate', result: 'passed', intentRef: scenario.intentId } });
+  await sleep(450);
+  emit(intentOrderClients, { kind: 'a2ui', type: 'surface.updateDataModel', target: 'intentRegistry', payload: { registry: { intentId: scenario.intentId, status: 'Validated', strategy: scenario.strategy, portfolioObjective: scenario.portfolioObjective } } });
+  await sleep(500);
+  emit(intentOrderClients, { kind: 'ag-ui', type: 'tool.call.started', payload: { tool: 'IMF.mapIntentToServiceCharacteristics', args: { intentRef: scenario.intentId } } });
+  await sleep(600);
+  emit(intentOrderClients, { kind: 'a2ui', type: 'surface.updateDataModel', target: 'mapping', payload: { characteristics: scenario.mappedCharacteristics } });
+  await sleep(500);
+  emit(intentOrderClients, { kind: 'a2ui', type: 'surface.updateDataModel', target: 'order', payload: { order: { ...baseOrder, state: 'Acknowledged', intentRef: scenario.intentId, characteristics: [...baseOrder.characteristics, ...scenario.mappedCharacteristics] } } });
+  await sleep(500);
+  emit(intentOrderClients, { kind: 'ag-ui', type: 'tool.call.started', payload: { tool: 'ServiceImpactTopology.preview', args: { intentRef: scenario.intentId } } });
+  await sleep(500);
+  emit(intentOrderClients, { kind: 'a2ui', type: 'surface.updateDataModel', target: 'impactTopology', payload: { topology: scenario.topology } });
+  await sleep(500);
+  emit(intentOrderClients, { kind: 'ag-ui', type: 'approval.requested', payload: { message: `Provision ${scenario.requestedService} with IntentRef ${scenario.intentId} and simplified orchestration characteristics?`, actions: ['approve', 'reject', 'modify'] } });
+}
+
+async function streamIntentOrderApproval(action) {
+  const scenario = intentOrderScenario.valid;
+
+  emit(intentOrderClients, { kind: 'ag-ui', type: 'user.action', payload: { action } });
+  await sleep(450);
+
+  if (action === 'reject') {
+    emit(intentOrderClients, { kind: 'a2ui', type: 'surface.updateDataModel', target: 'order', payload: { order: { id: scenario.serviceOrderId, state: 'Rejected', intentRef: scenario.intentId } } });
+    await sleep(350);
+    emit(intentOrderClients, { kind: 'ag-ui', type: 'run.completed', payload: { summary: 'Operator rejected provisioning. Order is stopped with IntentRef preserved for audit.' } });
+    return;
+  }
+
+  if (action === 'modify') {
+    emit(intentOrderClients, { kind: 'ag-ui', type: 'state.updated', payload: { summary: 'Scope modified: provision connectivity first and stage closed-loop assurance for operator review.' } });
+    await sleep(400);
+  }
+
+  emit(intentOrderClients, { kind: 'ag-ui', type: 'tool.call.started', payload: { tool: 'TMF641.ServiceOrder.submit', args: { serviceOrderId: scenario.serviceOrderId, intentRef: scenario.intentId } } });
+  await sleep(500);
+  emit(intentOrderClients, { kind: 'a2ui', type: 'surface.updateDataModel', target: 'order', payload: { order: { id: scenario.serviceOrderId, state: 'InProgress', intentRef: scenario.intentId } } });
+  await sleep(500);
+  emit(intentOrderClients, { kind: 'ag-ui', type: 'tool.call.started', payload: { tool: 'ServiceRegistry.createServices', args: { intentRef: scenario.intentId } } });
+  await sleep(550);
+  emit(intentOrderClients, { kind: 'a2ui', type: 'surface.updateDataModel', target: 'services', payload: { services: scenario.services } });
+  await sleep(450);
+  emit(intentOrderClients, { kind: 'ag-ui', type: 'notification.emitted', payload: { channel: 'TMF641/TMF921', message: scenario.notification } });
+  await sleep(350);
+  emit(intentOrderClients, { kind: 'a2ui', type: 'surface.updateDataModel', target: 'order', payload: { order: { id: scenario.serviceOrderId, state: 'Completed', intentRef: scenario.intentId } } });
+  await sleep(350);
+  emit(intentOrderClients, { kind: 'ag-ui', type: 'run.completed', payload: { summary: `Intent-driven order completed with operator action: ${action}.` } });
+}
 function parseBody(req) {
   return new Promise((resolveBody) => {
     let body = '';
@@ -475,6 +631,19 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  if (req.method === 'GET' && url.pathname === '/intent-order-demo/events') {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      'Access-Control-Allow-Origin': '*'
+    });
+    intentOrderClients.add(res);
+    emit(intentOrderClients, { kind: 'ag-ui', type: 'state.updated', payload: { status: 'connected', note: 'Intent order demo SSE stream connected' } });
+    req.on('close', () => intentOrderClients.delete(res));
+    return;
+  }
+
   if (req.method === 'POST' && url.pathname === '/investigate') {
     const body = await parseBody(req);
     lastNodeId = body.nodeId ?? 'RAN-Cluster-12';
@@ -535,6 +704,21 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  if (req.method === 'POST' && url.pathname === '/intent-order-demo/create-order') {
+    const body = await parseBody(req);
+    lastIntentOrderMode = body.mode === 'invalid' ? 'invalid' : 'valid';
+    sendJson(res, { ok: true });
+    streamIntentOrder(lastIntentOrderMode);
+    return;
+  }
+
+  if (req.method === 'POST' && url.pathname === '/intent-order-demo/approval') {
+    const body = await parseBody(req);
+    sendJson(res, { ok: true });
+    streamIntentOrderApproval(body.action ?? 'approve');
+    return;
+  }
+
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
@@ -550,6 +734,7 @@ const server = createServer(async (req, res) => {
   else if (url.pathname === '/generic-demo' || url.pathname === '/generic-demo/') filePath = resolve(frontendRoot, 'generic-demo.html');
   else if (url.pathname === '/retail-demo' || url.pathname === '/retail-demo/') filePath = resolve(frontendRoot, 'retail-demo.html');
   else if (url.pathname === '/dashboard-demo' || url.pathname === '/dashboard-demo/') filePath = resolve(frontendRoot, 'dashboard-demo.html');
+  else if (url.pathname === '/intent-order-demo' || url.pathname === '/intent-order-demo/') filePath = resolve(frontendRoot, 'intent-order-demo.html');
   else filePath = resolve(frontendRoot, `.${url.pathname}`);
 
   try {
@@ -563,4 +748,4 @@ const server = createServer(async (req, res) => {
   }
 });
 
-server.listen(8000, () => console.log('EDC demo available at http://localhost:8000, generic demo at http://localhost:8000/generic-demo, retail demo at http://localhost:8000/retail-demo, and dashboard demo at http://localhost:8000/dashboard-demo'));
+server.listen(8000, () => console.log('EDC demo available at http://localhost:8000, generic demo at http://localhost:8000/generic-demo, retail demo at http://localhost:8000/retail-demo, and dashboard demo at http://localhost:8000/dashboard-demo, and intent order demo at http://localhost:8000/intent-order-demo'));
