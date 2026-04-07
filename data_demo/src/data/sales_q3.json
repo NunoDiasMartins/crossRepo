@@ -1,0 +1,22 @@
+[
+  { "week": "2025-W27", "region": "Europe", "revenue": 132000, "orders": 1180 },
+  { "week": "2025-W28", "region": "Europe", "revenue": 135000, "orders": 1202 },
+  { "week": "2025-W29", "region": "Europe", "revenue": 137000, "orders": 1210 },
+  { "week": "2025-W30", "region": "Europe", "revenue": 136000, "orders": 1192 },
+  { "week": "2025-W31", "region": "Europe", "revenue": 191000, "orders": 1595 },
+  { "week": "2025-W32", "region": "Europe", "revenue": 139000, "orders": 1230 },
+  { "week": "2025-W33", "region": "Europe", "revenue": 91000, "orders": 802 },
+  { "week": "2025-W34", "region": "Europe", "revenue": 140000, "orders": 1242 },
+  { "week": "2025-W35", "region": "Europe", "revenue": 147000, "orders": 1294 },
+  { "week": "2025-W36", "region": "Europe", "revenue": 142000, "orders": 1268 },
+  { "week": "2025-W27", "region": "North America", "revenue": 151000, "orders": 1330 },
+  { "week": "2025-W28", "region": "North America", "revenue": 149000, "orders": 1296 },
+  { "week": "2025-W29", "region": "North America", "revenue": 152000, "orders": 1320 },
+  { "week": "2025-W30", "region": "North America", "revenue": 153000, "orders": 1336 },
+  { "week": "2025-W31", "region": "North America", "revenue": 154000, "orders": 1350 },
+  { "week": "2025-W32", "region": "North America", "revenue": 156000, "orders": 1382 },
+  { "week": "2025-W33", "region": "North America", "revenue": 121000, "orders": 1080 },
+  { "week": "2025-W34", "region": "North America", "revenue": 157000, "orders": 1391 },
+  { "week": "2025-W35", "region": "North America", "revenue": 164000, "orders": 1455 },
+  { "week": "2025-W36", "region": "North America", "revenue": 160000, "orders": 1403 }
+]
