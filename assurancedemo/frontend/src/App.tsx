@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { KpiCorrelationPanel } from './components/KpiCorrelationPanel';
-import { RcaPanel } from './components/RcaPanel';
 import { ResolutionPanel } from './components/ResolutionPanel';
 import { ServiceOverviewCard } from './components/ServiceOverviewCard';
 import { TopologyView } from './components/TopologyView';
@@ -16,6 +15,14 @@ const labels: Record<ActionType, string> = {
   RESET_DEMO: 'Reset Demo'
 };
 
+const capabilityAnnouncement = [
+  'ServiceOverviewCard',
+  'TopologyView (TopologyVisualization)',
+  'KpiCorrelationPanel',
+  'RcaPanel',
+  'ResolutionPanel'
+];
+
 const API = 'http://localhost:8787';
 
 export default function App() {
@@ -27,6 +34,15 @@ export default function App() {
 
   useEffect(() => {
     async function start() {
+      setTimeline((prev) => [
+        ...prev,
+        {
+          kind: 'user',
+          text: `UI capability handshake: ${capabilityAnnouncement.join(', ')}`,
+          badge: 'UI → Agent'
+        }
+      ]);
+
       const res = await fetch(`${API}/api/session/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -35,13 +51,7 @@ export default function App() {
             selectedService: 'enterprise-surveillance-slice',
             regionScope: 'west-metro'
           },
-          uiCapabilities: [
-            'ServiceOverviewCard',
-            'TopologyView',
-            'KpiCorrelationPanel',
-            'RcaPanel',
-            'ResolutionPanel'
-          ]
+          uiCapabilities: ['ServiceOverviewCard', 'TopologyView', 'KpiCorrelationPanel', 'RcaPanel', 'ResolutionPanel']
         })
       });
       const data = await res.json();
@@ -52,12 +62,28 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!appState.entities || !appState.alarms) return;
+    setTimeline((prev) => {
+      const hasContextCard = prev.some((item) => item.badge === 'Visible context');
+      if (hasContextCard) return prev;
+      return [
+        ...prev,
+        {
+          kind: 'event',
+          text: `Context loaded: Slice ${appState.entities.slice} in ${appState.entities.region}. Active alarm ${appState.alarms[0]?.id}.`,
+          badge: 'Visible context'
+        }
+      ];
+    });
+  }, [appState]);
+
+  useEffect(() => {
     if (!sessionId) return;
     const source = new EventSource(`${API}/api/events?sessionId=${sessionId}`);
 
     source.addEventListener('agent.message.delta', (evt) => {
       const data = JSON.parse((evt as MessageEvent).data);
-      setTimeline((prev) => [...prev, { kind: 'agent', text: data.message, badge: 'stream' }]);
+      setTimeline((prev) => [...prev, { kind: 'agent', text: data.message, badge: data.badge || 'Thinking' }]);
     });
 
     source.addEventListener('agent.message.completed', (evt) => {
@@ -70,12 +96,35 @@ export default function App() {
       setTimeline((prev) => [...prev, { kind: 'event', text: `${data.symptom} (${data.impactedEndpoints} impacted)`, badge: 'Incident' }]);
     });
 
-    ['ui.surface.replace', 'rca.identified', 'remediation.proposed', 'remediation.completed', 'tool.invocation.requested', 'tool.invocation.completed'].forEach((evtName) => {
-      source.addEventListener(evtName, (evt) => {
-        const data = JSON.parse((evt as MessageEvent).data);
-        if (evtName === 'ui.surface.replace') setSurface(data);
-        setTimeline((prev) => [...prev, { kind: 'event', text: `${evtName}`, badge: data.badge || 'UI update' }]);
-      });
+    source.addEventListener('tool.invocation.requested', (evt) => {
+      const data = JSON.parse((evt as MessageEvent).data);
+      setTimeline((prev) => [...prev, { kind: 'event', text: `Tool requested: ${data.tool}`, badge: data.badge || 'Tool' }]);
+    });
+
+    source.addEventListener('tool.invocation.completed', (evt) => {
+      const data = JSON.parse((evt as MessageEvent).data);
+      setTimeline((prev) => [...prev, { kind: 'event', text: `Tool completed: ${data.tool} (${data.status})`, badge: data.badge || 'Tool' }]);
+    });
+
+    source.addEventListener('ui.surface.replace', (evt) => {
+      const data = JSON.parse((evt as MessageEvent).data);
+      setSurface(data);
+      setTimeline((prev) => [...prev, { kind: 'event', text: `UI surface updated: ${data.title}`, badge: data.badge || 'UI update' }]);
+    });
+
+    source.addEventListener('rca.identified', (evt) => {
+      const data = JSON.parse((evt as MessageEvent).data);
+      setTimeline((prev) => [...prev, { kind: 'event', text: `RCA identified: ${data.cause} (${Math.round(data.confidence * 100)}% confidence)`, badge: data.badge || 'RCA' }]);
+    });
+
+    source.addEventListener('remediation.proposed', (evt) => {
+      const data = JSON.parse((evt as MessageEvent).data);
+      setTimeline((prev) => [...prev, { kind: 'event', text: `Remediation proposed: ${data.action}`, badge: data.badge || 'Remediation' }]);
+    });
+
+    source.addEventListener('remediation.completed', (evt) => {
+      const data = JSON.parse((evt as MessageEvent).data);
+      setTimeline((prev) => [...prev, { kind: 'event', text: `${data.result} (${data.recoveredEndpoints} endpoints recovered)`, badge: data.badge || 'Remediation' }]);
     });
 
     source.addEventListener('ui.action.suggested', (evt) => {
@@ -88,7 +137,7 @@ export default function App() {
 
   async function sendAction(action: ActionType) {
     if (!sessionId) return;
-    setTimeline((prev) => [...prev, { kind: 'user', text: labels[action] }]);
+    setTimeline((prev) => [...prev, { kind: 'user', text: labels[action], badge: 'Operator action' }]);
     await fetch(`${API}/api/action`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -112,9 +161,19 @@ export default function App() {
     if (surface.component === 'ServiceOverviewCard') {
       return <ServiceOverviewCard title={surface.title} serviceName={appState.service.name} metrics={(surface.props as any).metrics} sparkline={(surface.props as any).sparkline} />;
     }
-    if (surface.component === 'TopologyView') return <TopologyView title={surface.title} nodes={(surface.props as any).nodes} edges={(surface.props as any).edges} blastRadius={(surface.props as any).blastRadius} />;
+    if (surface.component === 'TopologyView') {
+      return (
+        <TopologyView
+          title={surface.title}
+          mode={(surface.props as any).mode}
+          nodes={(surface.props as any).nodes}
+          edges={(surface.props as any).edges}
+          blastRadius={(surface.props as any).blastRadius}
+          rcaDetails={(surface.props as any).rcaDetails}
+        />
+      );
+    }
     if (surface.component === 'KpiCorrelationPanel') return <KpiCorrelationPanel title={surface.title} series={(surface.props as any).series} insight={(surface.props as any).insight} />;
-    if (surface.component === 'RcaPanel') return <RcaPanel title={surface.title} confidence={(surface.props as any).confidence} rootCause={(surface.props as any).rootCause} tree={(surface.props as any).tree} propagation={(surface.props as any).propagation} />;
     return <ResolutionPanel title={surface.title} beforeAfter={(surface.props as any).beforeAfter} recoveredDevices={(surface.props as any).recoveredDevices} timeline={(surface.props as any).timeline} />;
   }, [surface, appState]);
 
@@ -128,40 +187,27 @@ export default function App() {
         </select>
       </header>
       <main>
-        <aside className="panel timeline-panel">
-          <h2>Chat / Agent Timeline</h2>
-          {timeline.map((item, idx) => (
-            <div className={`timeline-item ${item.kind}`} key={`${item.kind}-${idx}`}>
-              <p>{item.text}</p>
-              {item.badge ? <small>{item.badge}</small> : null}
-            </div>
-          ))}
-        </aside>
-
         <section className="panel work-panel">{renderedSurface}</section>
 
-        <aside className="panel context-panel">
-          <h2>Context / Actions</h2>
-          <div className="alarm-card">
-            <h4>Current alarm summary</h4>
-            {appState.alarms?.map((alarm) => (
-              <p key={alarm.id}>{alarm.id} · {alarm.severity} · {alarm.text}</p>
+        <aside className="panel timeline-panel">
+          <h2>Chat / Agent Timeline</h2>
+          <div className="timeline-scroll">
+            {timeline.map((item, idx) => (
+              <div className={`timeline-item ${item.kind}`} key={`${item.kind}-${idx}`}>
+                <p>{item.text}</p>
+                {item.badge ? <small>{item.badge}</small> : null}
+              </div>
             ))}
           </div>
-          <div className="entity-list">
-            <h4>Detected entities</h4>
-            <p>Slice: {appState.entities?.slice}</p>
-            <p>Region: {appState.entities?.region}</p>
-            <p>gNBs: {appState.entities?.impactedGnbs.join(', ')}</p>
-            <p>Cells: {appState.entities?.impactedCells.join(', ')}</p>
-            <p>Transport path: {appState.entities?.transportPath}</p>
-          </div>
-          <div className="actions">
-            {ACTIONS.map((action) => (
-              <button key={action} disabled={!suggestedActions.includes(action)} onClick={() => sendAction(action)}>
-                {labels[action]}
-              </button>
-            ))}
+          <div className="timeline-actions">
+            <h4>Recommended actions</h4>
+            <div className="actions">
+              {ACTIONS.map((action) => (
+                <button key={action} disabled={!suggestedActions.includes(action)} onClick={() => sendAction(action)}>
+                  {labels[action]}
+                </button>
+              ))}
+            </div>
           </div>
         </aside>
       </main>

@@ -38,6 +38,27 @@ export const baseState = {
   ]
 };
 
+const topologyNodes = [
+  { id: 'transport-link-a', label: 'transport-link-a', type: 'transport', impacted: true },
+  { id: 'gnb-101', label: 'gnb-101', type: 'gnb', impacted: true },
+  { id: 'gnb-102', label: 'gnb-102', type: 'gnb', impacted: true },
+  { id: 'gnb-103', label: 'gnb-103', type: 'gnb', impacted: true },
+  { id: 'cell-101-a', label: 'cell-101-a', type: 'cell', impacted: true },
+  { id: 'cell-101-b', label: 'cell-101-b', type: 'cell', impacted: true },
+  { id: 'cell-102-a', label: 'cell-102-a', type: 'cell', impacted: true },
+  { id: 'cell-103-a', label: 'cell-103-a', type: 'cell', impacted: true }
+];
+
+const topologyEdges: string[][] = [
+  ['transport-link-a', 'gnb-101'],
+  ['transport-link-a', 'gnb-102'],
+  ['transport-link-a', 'gnb-103'],
+  ['gnb-101', 'cell-101-a'],
+  ['gnb-101', 'cell-101-b'],
+  ['gnb-102', 'cell-102-a'],
+  ['gnb-103', 'cell-103-a']
+];
+
 export const surfaces = {
   serviceOverview: {
     surface: 'service-overview',
@@ -58,25 +79,9 @@ export const surfaces = {
     title: 'Impact Topology',
     component: 'TopologyView',
     props: {
-      nodes: [
-        { id: 'transport-link-a', label: 'transport-link-a', type: 'transport', impacted: true },
-        { id: 'gnb-101', label: 'gnb-101', type: 'gnb', impacted: true },
-        { id: 'gnb-102', label: 'gnb-102', type: 'gnb', impacted: true },
-        { id: 'gnb-103', label: 'gnb-103', type: 'gnb', impacted: true },
-        { id: 'cell-101-a', label: 'cell-101-a', type: 'cell', impacted: true },
-        { id: 'cell-101-b', label: 'cell-101-b', type: 'cell', impacted: true },
-        { id: 'cell-102-a', label: 'cell-102-a', type: 'cell', impacted: true },
-        { id: 'cell-103-a', label: 'cell-103-a', type: 'cell', impacted: true }
-      ],
-      edges: [
-        ['transport-link-a', 'gnb-101'],
-        ['transport-link-a', 'gnb-102'],
-        ['transport-link-a', 'gnb-103'],
-        ['gnb-101', 'cell-101-a'],
-        ['gnb-101', 'cell-101-b'],
-        ['gnb-102', 'cell-102-a'],
-        ['gnb-103', 'cell-103-a']
-      ],
+      mode: 'impact',
+      nodes: topologyNodes,
+      edges: topologyEdges,
       blastRadius: {
         impactedCameras: 1200,
         impactedGnbs: 3,
@@ -100,25 +105,22 @@ export const surfaces = {
   },
   rca: {
     surface: 'root-cause-analysis',
-    title: 'Root Cause Analysis',
-    component: 'RcaPanel',
+    title: 'RCA Causal Topology',
+    component: 'TopologyView',
     props: {
-      confidence: 0.91,
-      rootCause: 'transport congestion on transport-link-a',
-      tree: {
-        node: 'Transport Congestion',
-        children: [
-          {
-            node: 'Downstream gNB queueing',
-            children: [{ node: 'Cell scheduling delay' }, { node: 'Handover retries' }]
-          },
-          {
-            node: 'Latency inflation',
-            children: [{ node: 'SLA breach risk' }, { node: 'Camera stream drops' }]
-          }
-        ]
-      },
-      propagation: 'Upstream congestion created downstream queueing across three gNBs and four cells.'
+      mode: 'rca',
+      nodes: topologyNodes.map((node) => ({
+        ...node,
+        rootCause: node.id === 'transport-link-a',
+        causal: ['transport-link-a', 'gnb-101', 'gnb-102', 'gnb-103'].includes(node.id)
+      })),
+      edges: topologyEdges,
+      rcaDetails: {
+        confidence: 0.91,
+        rootCause: 'transport congestion on transport-link-a',
+        propagation: 'Congestion on transport-link-a propagated queueing to three gNBs and then to four impacted cells.',
+        causalPath: ['transport-link-a', 'gnb-101', 'gnb-102', 'gnb-103']
+      }
     }
   },
   resolution: {

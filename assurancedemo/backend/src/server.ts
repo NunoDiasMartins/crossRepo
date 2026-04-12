@@ -37,6 +37,18 @@ app.use(express.json());
 const sessions = new Map<string, Session>();
 const clients = new Map<string, express.Response[]>();
 
+const ACTION_SUGGESTIONS: Record<DemoAction, DemoAction[]> = {
+  VIEW_IMPACT: ['ANALYZE_KPIS', 'SHOW_RCA', 'APPLY_FIX', 'RESET_DEMO'],
+  ANALYZE_KPIS: ['SHOW_RCA', 'APPLY_FIX', 'RESET_DEMO'],
+  SHOW_RCA: ['APPLY_FIX', 'RESET_DEMO'],
+  APPLY_FIX: ['RESET_DEMO'],
+  RESET_DEMO: ['VIEW_IMPACT', 'ANALYZE_KPIS', 'SHOW_RCA', 'APPLY_FIX', 'RESET_DEMO']
+};
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function queueEvent(sessionId: string, event: DemoEvent): void {
   const session = sessions.get(sessionId);
   if (!session) return;
@@ -59,33 +71,59 @@ function flush(sessionId: string): void {
   }
 }
 
-function scriptedInitialEvents(sessionId: string): void {
+function buildCapabilityLabels(uiCapabilities: string[] = []): string[] {
+  const mapping: Record<string, string> = {
+    ServiceOverviewCard: 'Service Overview Card',
+    TopologyView: 'Topology Visualization',
+    KpiCorrelationPanel: 'KPI Correlation Panel',
+    RcaPanel: 'RCA Analysis Panel',
+    ResolutionPanel: 'Resolution Summary Panel'
+  };
+  return uiCapabilities.map((capability) => mapping[capability] ?? capability);
+}
+
+async function scriptedInitialEvents(sessionId: string): Promise<void> {
+  const session = sessions.get(sessionId);
+  const capabilities = buildCapabilityLabels(session?.uiCapabilities);
+
   queueEvent(sessionId, { type: 'session.started', payload: { sessionId, protocol: 'AG-UI-style event stream v0.1' } });
   queueEvent(sessionId, {
     type: 'incident.detected',
     payload: {
       service: baseState.service.name,
       symptom: 'Latency spike and SLA degradation',
-      impactedEndpoints: baseState.service.impactedEndpoints
+      impactedEndpoints: baseState.service.impactedEndpoints,
+      badge: 'Incident'
     }
   });
   queueEvent(sessionId, {
     type: 'agent.message.delta',
     payload: {
-      message: 'Agent runtime loaded scenario and is composing the initial assurance workspace.'
+      message: 'Acknowledged UI capability handshake. Planning the first surface now...',
+      badge: 'Thinking'
     }
   });
+  await sleep(500);
+  queueEvent(sessionId, {
+    type: 'agent.message.completed',
+    payload: {
+      message: `Capabilities available: ${capabilities.join(', ')}. I will select these tools as the investigation progresses.`,
+      badge: 'Capability handshake'
+    }
+  });
+  await sleep(450);
   queueEvent(sessionId, {
     type: 'ui.surface.replace',
     payload: {
       schema: 'A2UI-style UI schema v0.1',
-      ...surfaces.serviceOverview
+      ...surfaces.serviceOverview,
+      badge: 'Surface composed'
     }
   });
   queueEvent(sessionId, {
     type: 'agent.message.completed',
     payload: {
-      message: 'Latency degradation detected in Enterprise Surveillance Slice. I have prepared impact analysis.',
+      message: 'Latency degradation detected in Enterprise Surveillance Slice. Recommended next step: inspect impact topology.',
       badge: 'Agent event'
     }
   });
@@ -97,71 +135,123 @@ function scriptedInitialEvents(sessionId: string): void {
   });
 }
 
-function handleAction(sessionId: string, action: DemoAction): void {
+async function handleAction(sessionId: string, action: DemoAction): Promise<void> {
   if (action === 'RESET_DEMO') {
-    sessions.set(sessionId, { id: sessionId, step: 0, queue: [] });
-    scriptedInitialEvents(sessionId);
+    sessions.set(sessionId, { id: sessionId, step: 0, queue: [], context: sessions.get(sessionId)?.context, uiCapabilities: sessions.get(sessionId)?.uiCapabilities });
+    await scriptedInitialEvents(sessionId);
     return;
   }
 
   if (action === 'VIEW_IMPACT') {
     queueEvent(sessionId, {
       type: 'agent.message.delta',
-      payload: { message: 'Switching to impact topology and highlighting blast radius...' }
+      payload: { message: 'Thinking: computing blast radius and selecting Topology Visualization...', badge: 'Thinking' }
     });
-    queueEvent(sessionId, { type: 'ui.surface.replace', payload: { schema: 'A2UI-style UI schema v0.1', ...surfaces.impactTopology } });
+    queueEvent(sessionId, {
+      type: 'tool.invocation.requested',
+      payload: { tool: 'TopologyVisualization.impactGraph', badge: 'Tool requested' }
+    });
+    await sleep(700);
+    queueEvent(sessionId, {
+      type: 'tool.invocation.completed',
+      payload: { tool: 'TopologyVisualization.impactGraph', status: 'success', badge: 'Tool completed' }
+    });
+    await sleep(350);
+    queueEvent(sessionId, { type: 'ui.surface.replace', payload: { schema: 'A2UI-style UI schema v0.1', ...surfaces.impactTopology, badge: 'Surface composed' } });
     queueEvent(sessionId, {
       type: 'state.patch',
       payload: { mode: 'impact', highlightedNodes: baseState.entities.impactedGnbs }
     });
-    return;
+    queueEvent(sessionId, {
+      type: 'agent.message.completed',
+      payload: { message: 'Impact topology ready. Three gNBs and four cells are in the blast radius.', badge: 'Agent event' }
+    });
   }
 
   if (action === 'ANALYZE_KPIS') {
     queueEvent(sessionId, {
       type: 'agent.message.delta',
-      payload: { message: 'Correlating PRB utilization, handover failures, and latency trend windows...' }
+      payload: { message: 'Thinking: correlating PRB utilization, handover failures, and latency windows...', badge: 'Thinking' }
     });
-    queueEvent(sessionId, { type: 'ui.surface.replace', payload: { schema: 'A2UI-style UI schema v0.1', ...surfaces.kpiCorrelation } });
+    queueEvent(sessionId, {
+      type: 'tool.invocation.requested',
+      payload: { tool: 'KpiCorrelationPanel.timeseriesAnalyzer', badge: 'Tool requested' }
+    });
+    await sleep(650);
+    queueEvent(sessionId, {
+      type: 'tool.invocation.completed',
+      payload: { tool: 'KpiCorrelationPanel.timeseriesAnalyzer', status: 'success', badge: 'Tool completed' }
+    });
+    await sleep(300);
+    queueEvent(sessionId, { type: 'ui.surface.replace', payload: { schema: 'A2UI-style UI schema v0.1', ...surfaces.kpiCorrelation, badge: 'Surface composed' } });
     queueEvent(sessionId, {
       type: 'agent.message.completed',
-      payload: { message: 'Anomalies are correlated. Elevated PRB and handover failures align with the latency spike.', badge: 'UI update' }
+      payload: { message: 'Anomalies are correlated. Elevated PRB and handover failures align with the latency spike.', badge: 'Agent event' }
     });
-    return;
   }
 
   if (action === 'SHOW_RCA') {
     queueEvent(sessionId, {
+      type: 'agent.message.delta',
+      payload: { message: 'Thinking: tracing causal propagation to identify the root transport fault...', badge: 'Thinking' }
+    });
+    queueEvent(sessionId, {
+      type: 'tool.invocation.requested',
+      payload: { tool: 'TopologyVisualization.causalPath', badge: 'Tool requested' }
+    });
+    await sleep(800);
+    queueEvent(sessionId, {
+      type: 'tool.invocation.completed',
+      payload: { tool: 'TopologyVisualization.causalPath', status: 'success', badge: 'Tool completed' }
+    });
+    queueEvent(sessionId, {
       type: 'rca.identified',
       payload: { cause: 'transport congestion affecting downstream gNBs and cells', confidence: 0.91, badge: 'RCA found' }
     });
-    queueEvent(sessionId, { type: 'ui.surface.replace', payload: { schema: 'A2UI-style UI schema v0.1', ...surfaces.rca } });
-    return;
+    await sleep(300);
+    queueEvent(sessionId, { type: 'ui.surface.replace', payload: { schema: 'A2UI-style UI schema v0.1', ...surfaces.rca, badge: 'Surface composed' } });
+    queueEvent(sessionId, {
+      type: 'agent.message.completed',
+      payload: { message: 'RCA complete. Root cause is transport-link-a congestion, with clear downstream propagation.', badge: 'Agent event' }
+    });
   }
 
   if (action === 'APPLY_FIX') {
     queueEvent(sessionId, {
       type: 'remediation.proposed',
-      payload: { action: 'Reroute traffic to a secondary path', expectedLatencyGainMs: 72 }
+      payload: { action: 'Reroute traffic to a secondary path', expectedLatencyGainMs: 72, badge: 'Remediation' }
     });
     queueEvent(sessionId, {
       type: 'tool.invocation.requested',
-      payload: { tool: 'traffic-controller.reroute', args: { from: 'transport-link-a', to: 'secondary-path-b' } }
+      payload: { tool: 'traffic-controller.reroute', args: { from: 'transport-link-a', to: 'secondary-path-b' }, badge: 'Tool requested' }
     });
     queueEvent(sessionId, {
       type: 'agent.message.delta',
-      payload: { message: 'Applying reroute and validating downstream KPI stabilization...' }
+      payload: { message: 'Applying reroute and validating downstream KPI stabilization...', badge: 'Thinking' }
     });
+    await sleep(900);
     queueEvent(sessionId, {
       type: 'tool.invocation.completed',
-      payload: { tool: 'traffic-controller.reroute', status: 'success' }
+      payload: { tool: 'traffic-controller.reroute', status: 'success', badge: 'Tool completed' }
     });
+    await sleep(300);
     queueEvent(sessionId, {
       type: 'remediation.completed',
-      payload: { result: 'Traffic rerouted. KPIs normalized.', recoveredEndpoints: 1200 }
+      payload: { result: 'Traffic rerouted. KPIs normalized.', recoveredEndpoints: 1200, badge: 'Remediation complete' }
     });
-    queueEvent(sessionId, { type: 'ui.surface.replace', payload: { schema: 'A2UI-style UI schema v0.1', ...surfaces.resolution } });
+    queueEvent(sessionId, { type: 'ui.surface.replace', payload: { schema: 'A2UI-style UI schema v0.1', ...surfaces.resolution, badge: 'Surface composed' } });
+    queueEvent(sessionId, {
+      type: 'agent.message.completed',
+      payload: { message: 'Fix applied successfully. Service has recovered and SLA is back within target.', badge: 'Agent event' }
+    });
   }
+
+  queueEvent(sessionId, {
+    type: 'ui.action.suggested',
+    payload: {
+      actions: ACTION_SUGGESTIONS[action]
+    }
+  });
 }
 
 app.post('/api/session/start', (req, res) => {
@@ -171,7 +261,7 @@ app.post('/api/session/start', (req, res) => {
   };
   const sessionId = `sess-${Date.now()}`;
   sessions.set(sessionId, { id: sessionId, step: 0, queue: [], context, uiCapabilities });
-  scriptedInitialEvents(sessionId);
+  void scriptedInitialEvents(sessionId);
   res.json({ sessionId, initialState: baseState, acceptedContext: context, acceptedUiCapabilities: uiCapabilities ?? [] });
 });
 
@@ -219,7 +309,7 @@ app.post('/api/action', (req, res) => {
     }
   });
 
-  handleAction(sessionId, action);
+  void handleAction(sessionId, action);
   res.json({ ok: true });
 });
 
