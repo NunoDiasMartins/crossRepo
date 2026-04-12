@@ -27,13 +27,28 @@ function toPoints(values: number[], width: number, height: number) {
     .join(' ');
 }
 
-function MetricLineChart({ label, values, unit, impacted = false }: { label: string; values: number[]; unit: string; impacted?: boolean }) {
+function MetricLineChart({
+  label,
+  values,
+  unit,
+  impacted = false,
+  timestamps
+}: {
+  label: string;
+  values: number[];
+  unit: string;
+  impacted?: boolean;
+  timestamps: string[];
+}) {
   const width = 240;
   const height = 72;
   const points = toPoints(values, width, height);
   const latest = values[values.length - 1];
   const earliest = values[0];
   const delta = latest - earliest;
+  const first = timestamps[0] ?? 'T-24h';
+  const middle = timestamps[Math.floor(timestamps.length / 2)] ?? 'T-12h';
+  const last = timestamps[timestamps.length - 1] ?? 'Now';
 
   return (
     <article className={`kpi-line-card ${impacted ? 'impacted' : ''}`}>
@@ -47,6 +62,11 @@ function MetricLineChart({ label, values, unit, impacted = false }: { label: str
       <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${label} trend`}>
         <polyline points={points} />
       </svg>
+      <div className="kpi-line-card__axis">
+        <span>{first}</span>
+        <span>{middle}</span>
+        <span>{last}</span>
+      </div>
       <p className={`kpi-line-card__delta ${delta > 0 ? 'up' : 'down'}`}>
         Trend: {delta > 0 ? '+' : ''}
         {delta.toFixed(2)} {unit}
@@ -56,7 +76,7 @@ function MetricLineChart({ label, values, unit, impacted = false }: { label: str
   );
 }
 
-export function KpiCorrelationPanel({ title, series, insight }: { title: string; series: KpiSeries; insight: string }) {
+export function KpiCorrelationPanel({ title, series, insight, timestamps = [] }: { title: string; series: KpiSeries; insight: string; timestamps?: string[] }) {
   return (
     <section className="surface-card">
       <h2>{title}</h2>
@@ -68,6 +88,7 @@ export function KpiCorrelationPanel({ title, series, insight }: { title: string;
             values={series[kpi.key]}
             unit={kpi.unit}
             impacted={kpi.impacted}
+            timestamps={timestamps}
           />
         ))}
       </div>
