@@ -1,0 +1,144 @@
+export type SurfaceName =
+  | 'service-overview'
+  | 'impact-topology'
+  | 'kpi-correlation'
+  | 'root-cause-analysis'
+  | 'resolution-summary';
+
+export const baseState = {
+  service: {
+    id: 'enterprise-surveillance-slice',
+    name: 'Enterprise Surveillance Slice',
+    slaCompliance: 97.8,
+    latencyP95: 148,
+    activeAlarms: 3,
+    impactedEndpoints: 1200
+  },
+  alarms: [
+    {
+      id: 'ALM-4492',
+      severity: 'critical',
+      text: 'Latency spike detected in region west-metro'
+    }
+  ],
+  entities: {
+    slice: 'Enterprise Surveillance Slice',
+    region: 'west-metro',
+    impactedGnbs: ['gnb-101', 'gnb-102', 'gnb-103'],
+    impactedCells: ['cell-101-a', 'cell-101-b', 'cell-102-a', 'cell-103-a'],
+    transportPath: 'transport-link-a'
+  },
+  remediationOptions: [
+    {
+      id: 'reroute-secondary',
+      title: 'Reroute traffic to secondary path',
+      risk: 'low',
+      expectedLatencyGainMs: 72
+    }
+  ]
+};
+
+export const surfaces = {
+  serviceOverview: {
+    surface: 'service-overview',
+    title: 'Service Overview',
+    component: 'ServiceOverviewCard',
+    props: {
+      metrics: {
+        slaCompliance: 97.8,
+        latencyP95: 148,
+        activeAlarms: 3,
+        impactedEndpoints: 1200
+      },
+      sparkline: [95, 93, 94, 90, 85, 81, 79]
+    }
+  },
+  impactTopology: {
+    surface: 'impact-topology',
+    title: 'Impact Topology',
+    component: 'TopologyView',
+    props: {
+      nodes: [
+        { id: 'transport-link-a', label: 'transport-link-a', type: 'transport', impacted: true },
+        { id: 'gnb-101', label: 'gnb-101', type: 'gnb', impacted: true },
+        { id: 'gnb-102', label: 'gnb-102', type: 'gnb', impacted: true },
+        { id: 'gnb-103', label: 'gnb-103', type: 'gnb', impacted: true },
+        { id: 'cell-101-a', label: 'cell-101-a', type: 'cell', impacted: true },
+        { id: 'cell-101-b', label: 'cell-101-b', type: 'cell', impacted: true },
+        { id: 'cell-102-a', label: 'cell-102-a', type: 'cell', impacted: true },
+        { id: 'cell-103-a', label: 'cell-103-a', type: 'cell', impacted: true }
+      ],
+      edges: [
+        ['transport-link-a', 'gnb-101'],
+        ['transport-link-a', 'gnb-102'],
+        ['transport-link-a', 'gnb-103'],
+        ['gnb-101', 'cell-101-a'],
+        ['gnb-101', 'cell-101-b'],
+        ['gnb-102', 'cell-102-a'],
+        ['gnb-103', 'cell-103-a']
+      ],
+      blastRadius: {
+        impactedCameras: 1200,
+        impactedGnbs: 3,
+        impactedCells: 4
+      }
+    }
+  },
+  kpiCorrelation: {
+    surface: 'kpi-correlation',
+    title: 'KPI Correlation',
+    component: 'KpiCorrelationPanel',
+    props: {
+      series: {
+        prbUtilization: [62, 64, 66, 74, 81, 88, 91],
+        handoverFailures: [1.2, 1.4, 1.8, 2.9, 4.3, 6.1, 6.4],
+        latency: [44, 46, 48, 62, 89, 122, 148],
+        packetLoss: [0.1, 0.2, 0.3, 0.8, 1.1, 1.7, 2.2]
+      },
+      insight: 'PRB utilization and handover failures are strongly correlated with latency spike in the same window.'
+    }
+  },
+  rca: {
+    surface: 'root-cause-analysis',
+    title: 'Root Cause Analysis',
+    component: 'RcaPanel',
+    props: {
+      confidence: 0.91,
+      rootCause: 'transport congestion on transport-link-a',
+      tree: {
+        node: 'Transport Congestion',
+        children: [
+          {
+            node: 'Downstream gNB queueing',
+            children: [{ node: 'Cell scheduling delay' }, { node: 'Handover retries' }]
+          },
+          {
+            node: 'Latency inflation',
+            children: [{ node: 'SLA breach risk' }, { node: 'Camera stream drops' }]
+          }
+        ]
+      },
+      propagation: 'Upstream congestion created downstream queueing across three gNBs and four cells.'
+    }
+  },
+  resolution: {
+    surface: 'resolution-summary',
+    title: 'Resolution Summary',
+    component: 'ResolutionPanel',
+    props: {
+      beforeAfter: {
+        latencyP95: { before: 148, after: 52 },
+        slaCompliance: { before: 97.8, after: 99.95 },
+        packetLoss: { before: 2.2, after: 0.2 }
+      },
+      recoveredDevices: 1200,
+      timeline: [
+        'Detected latency degradation',
+        'Correlated congestion + handover failures',
+        'Identified transport-link-a congestion',
+        'Rerouted traffic to secondary path',
+        'KPI recovery confirmed'
+      ]
+    }
+  }
+};
