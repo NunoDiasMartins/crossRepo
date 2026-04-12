@@ -5,12 +5,13 @@ header { display: flex; align-items: center; gap: 14px; padding: 12px 20px; bord
 header h1 { font-size: 1.2rem; margin: 0; }
 .badge { background: #113668; border: 1px solid #2866b8; border-radius: 999px; padding: 4px 10px; font-size: 12px; }
 header select { margin-left: auto; padding: 6px; background: #102542; color: #d8e0ef; border: 1px solid #2f5285; }
-main { flex: 1; display: grid; grid-template-columns: 1.7fr 1fr; gap: 14px; padding: 14px; }
-.panel { background: linear-gradient(160deg, #0f1f3d, #0b1730); border: 1px solid #24436f; border-radius: 12px; padding: 12px; overflow: hidden; }
+main { flex: 1; display: grid; grid-template-columns: 1.7fr 1fr; gap: 14px; padding: 14px; min-height: 0; }
+.panel { background: linear-gradient(160deg, #0f1f3d, #0b1730); border: 1px solid #24436f; border-radius: 12px; padding: 12px; overflow: hidden; min-height: 0; }
 .work-panel { overflow: auto; }
-.timeline-panel { display: flex; flex-direction: column; }
-.timeline-scroll { overflow: auto; padding-right: 4px; flex: 1; min-height: 0; }
-.timeline-actions { border-top: 1px solid #2a4c7e; padding-top: 10px; margin-top: 8px; background: rgba(7, 22, 43, 0.55); }
+.timeline-panel { display: flex; flex-direction: column; min-height: 0; height: 100%; }
+.timeline-panel h2 { margin: 0 0 10px; flex-shrink: 0; }
+.timeline-scroll { overflow-y: auto; overflow-x: hidden; padding-right: 4px; flex: 1 1 auto; min-height: 0; }
+.timeline-actions { border-top: 1px solid #2a4c7e; padding-top: 10px; margin-top: 8px; background: rgba(7, 22, 43, 0.55); flex-shrink: 0; }
 .timeline-actions h4 { margin: 0 0 8px; color: #a9c0e4; font-size: 13px; }
 .timeline-item { margin-bottom: 10px; padding: 10px; border-left: 3px solid #3f78c9; background: rgba(8, 29, 57, 0.7); border-radius: 8px; animation: fadeIn 240ms ease-in; }
 .timeline-item.user { border-left-color: #5fbf94; }
@@ -100,3 +101,4 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 .resolution-kpi-chart__header strong { color: #fff3da; font-size: 15px; font-weight: 700; }
 .resolution-kpi-chart__header small { margin-left: 4px; color: #9ab2d6; font-size: 11px; font-weight: 400; }
 .resolution-kpi-chart polyline { fill: none; stroke: #74f0a6; stroke-width: 2.3; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 4px rgba(116, 240, 166, 0.4)); }
+

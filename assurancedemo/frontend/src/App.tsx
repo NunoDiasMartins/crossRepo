@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { KpiCorrelationPanel } from './components/KpiCorrelationPanel';
 import { ResolutionPanel } from './components/ResolutionPanel';
 import { ServiceOverviewCard } from './components/ServiceOverviewCard';
@@ -29,6 +29,7 @@ export default function App() {
   const [surface, setSurface] = useState<SurfaceSchema | null>(null);
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [suggestedActions, setSuggestedActions] = useState<ActionType[]>([]);
+  const timelineScrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     async function start() {
@@ -135,6 +136,12 @@ export default function App() {
     return () => source.close();
   }, [sessionId]);
 
+  useEffect(() => {
+    const container = timelineScrollRef.current;
+    if (!container) return;
+    container.scrollTop = container.scrollHeight;
+  }, [timeline]);
+
   async function sendAction(action: ActionType) {
     if (!sessionId) return;
     setTimeline((prev) => [...prev, { kind: 'user', text: labels[action], badge: 'Operator action' }]);
@@ -208,7 +215,7 @@ export default function App() {
 
         <aside className="panel timeline-panel">
           <h2>Chat / Agent Timeline</h2>
-          <div className="timeline-scroll">
+          <div className="timeline-scroll" ref={timelineScrollRef}>
             {timeline.map((item, idx) => (
               <div className={`timeline-item ${item.kind}`} key={`${item.kind}-${idx}`}>
                 <p>{item.text}</p>
@@ -232,3 +239,5 @@ export default function App() {
     </div>
   );
 }
+
+
