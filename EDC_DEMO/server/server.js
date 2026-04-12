@@ -39,7 +39,7 @@ function neighborsFor(nodeId) {
 }
 
 async function streamInvestigation(nodeId) {
-  emit({ kind: 'ag-ui', type: 'intent.received', payload: { intent: 'InvestigateNode', nodeId } });
+  emit({ kind: 'ag-ui', type: 'intent.received', payload: { intent: 'InvestigateNode', nodeId, incidentId: `INC-${String(Math.floor(Math.random()*9000)+1000)}` } });
   await sleep(500);
   emit({ kind: 'ag-ui', type: 'agent.plan', payload: { steps: ['fetch related incidents', 'expand topology neighborhood', 'run correlation analysis'] } });
   await sleep(600);
@@ -127,7 +127,9 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  const filePath = url.pathname === '/' ? resolve(frontendRoot, 'index.html') : resolve(frontendRoot, `.${url.pathname}`);
+  const filePath = (url.pathname === '/' || url.pathname === '/dashboard-demo')
+    ? resolve(frontendRoot, 'index.html')
+    : resolve(frontendRoot, `.${url.pathname}`);
   try {
     const file = await readFile(filePath);
     const ext = extname(filePath);
