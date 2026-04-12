@@ -183,6 +183,11 @@ export const surfaces = {
         packetLoss: { before: 2.2, after: 0.2 }
       },
       recoveredDevices: 1200,
+      recoveryLabels: ['Before fix', 'During reroute', 'After fix'],
+      recoverySeries: {
+        dropRate: [3.1, 1.8, 0.3],
+        packetLoss: [2.2, 1.1, 0.2]
+      },
       timeline: [
         'Detected latency degradation',
         'Correlated congestion + handover failures',
