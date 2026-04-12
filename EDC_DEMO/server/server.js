@@ -417,6 +417,11 @@ async function streamRetailApproval(action) {
 
 async function streamDashboardInvestigation(incidentId) {
   const incident = dashboardIncidents[incidentId] ?? dashboardIncidents['INC-4412'];
+  const neighborIds = telecomNeighborsFor(incident.nodeId);
+  const degradedNodes = [incident.nodeId, ...neighborIds].map((nodeId, idx) => ({
+    id: nodeId,
+    degradation: Math.max(12, 68 - (idx * 11))
+  }));
 
   emit(dashboardClients, { kind: 'ag-ui', type: 'intent.received', payload: { intent: 'InvestigateIncidentFromDashboard', incidentId: incident.incidentId } });
   await sleep(450);
@@ -432,9 +437,11 @@ async function streamDashboardInvestigation(incidentId) {
   await sleep(500);
   emit(dashboardClients, { kind: 'ag-ui', type: 'tool.called', payload: { tool: 'Topology.reveal', args: { nodeId: incident.nodeId } } });
   await sleep(450);
-  emit(dashboardClients, { kind: 'a2ui', type: 'surface.updateDataModel', target: 'topology', payload: { selectedNodeId: incident.nodeId, neighborIds: telecomNeighborsFor(incident.nodeId), focusedSegment: 'transport-west' } });
+  emit(dashboardClients, { kind: 'a2ui', type: 'surface.updateDataModel', target: 'topology', payload: { selectedNodeId: incident.nodeId, neighborIds, focusedSegment: 'transport-west' } });
+  await sleep(350);
+  emit(dashboardClients, { kind: 'a2ui', type: 'surface.updateDataModel', target: 'degradation', payload: { nodes: degradedNodes } });
   await sleep(500);
-  emit(dashboardClients, { kind: 'a2ui', type: 'surface.updateDataModel', target: 'incidents', payload: { incidents: incidents.filter((item) => item.relatedNode === incident.nodeId || telecomNeighborsFor(incident.nodeId).includes(item.relatedNode)) } });
+  emit(dashboardClients, { kind: 'a2ui', type: 'surface.updateDataModel', target: 'incidents', payload: { incidents: incidents.filter((item) => item.relatedNode === incident.nodeId || neighborIds.includes(item.relatedNode)) } });
   await sleep(450);
   emit(dashboardClients, { kind: 'ag-ui', type: 'state.updated', payload: { summary: incident.summary, suspectedLayer: 'Transport' } });
   await sleep(450);
@@ -446,9 +453,32 @@ async function streamDashboardApproval(action) {
   await sleep(450);
 
   if (action === 'approve') {
+    const incident = dashboardIncidents[lastDashboardIncidentId] ?? dashboardIncidents['INC-4412'];
+    const correctionNodes = [incident.nodeId, ...telecomNeighborsFor(incident.nodeId)].slice(0, 4);
+    let baseline = correctionNodes.map((nodeId, idx) => ({
+      id: nodeId,
+      latencyMs: 95 + (idx * 14),
+      errorRate: Number((2.6 - (idx * 0.4)).toFixed(2)),
+      packetLoss: Number((1.8 - (idx * 0.35)).toFixed(2))
+    }));
+
+    emit(dashboardClients, { kind: 'a2ui', type: 'surface.updateDataModel', target: 'correction', payload: { visible: true, metrics: baseline } });
+    await sleep(350);
+
     emit(dashboardClients, { kind: 'ag-ui', type: 'tool.called', payload: { tool: 'Topology.focusSegment', args: { segmentId: 'transport-west' } } });
     await sleep(450);
     emit(dashboardClients, { kind: 'ag-ui', type: 'state.updated', payload: { summary: 'Change request approved and transport remediation prepared.' } });
+
+    for (let tick = 0; tick < 4; tick += 1) {
+      await sleep(600);
+      baseline = baseline.map((metric) => ({
+        ...metric,
+        latencyMs: Math.max(26, metric.latencyMs - Math.floor(Math.random() * 6)),
+        errorRate: Number(Math.max(0.2, metric.errorRate - (Math.random() * 0.18)).toFixed(2)),
+        packetLoss: Number(Math.max(0.05, metric.packetLoss - (Math.random() * 0.12)).toFixed(2))
+      }));
+      emit(dashboardClients, { kind: 'a2ui', type: 'surface.updateDataModel', target: 'correction', payload: { visible: true, metrics: baseline } });
+    }
   }
 
   if (action === 'modify') {

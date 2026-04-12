@@ -88,7 +88,11 @@ const state = {
   timeline: [],
   awaitingApproval: false,
   proposalText: null,
-  agentStatus: 'idle'
+  agentStatus: 'idle',
+  investigationMode: false,
+  degradedNodes: [],
+  showCorrectionWidget: false,
+  correctionMetrics: []
 };
 
 const app = document.querySelector('#app');
@@ -113,7 +117,8 @@ function render() {
         </div>
       </header>
 
-      <section class="layout ${state.showTopology ? 'topology-active' : ''}">
+      <section class="layout ${state.showTopology ? 'topology-active' : ''} ${state.investigationMode ? 'investigation-mode' : ''}">
+        ${state.investigationMode ? '' : `
         <article class="panel overview-panel">
           <div class="panel-heading">
             <h2>Service Health</h2>
@@ -131,7 +136,9 @@ function render() {
             `).join('')}
           </div>
         </article>
+        `}
 
+        ${state.investigationMode ? '' : `
         <article class="panel incidents-panel">
           <div class="panel-heading">
             <h2>Incident Queue</h2>
@@ -145,7 +152,7 @@ function render() {
                   <span class="severity ${incident.severity.toLowerCase()}">${incident.severity}</span>
                 </div>
                 <div class="incident-summary">${incident.summary}</div>
-                <div class="incident-meta">${incident.service} · ${incident.status}</div>
+                <div class="incident-meta">${incident.service} Â· ${incident.status}</div>
               </button>
             `).join('')}
           </div>
@@ -153,6 +160,7 @@ function render() {
             <button id="investigateBtn" ${state.selectedIncidentId ? '' : 'disabled'}>Investigate issue</button>
           </div>
         </article>
+        `}
 
         ${state.showTopology ? `
           <article class="panel topology-panel">
@@ -163,6 +171,14 @@ function render() {
             ${renderTopology()}
             <div class="topology-caption">Topology is shown only after the agent expands the affected scope and service impact.</div>
           </article>
+
+          <article class="panel degradation-panel">
+            <div class="panel-heading">
+              <h2>Impacted Node Degradation</h2>
+              <div class="panel-note">Degradation % (higher is worse)</div>
+            </div>
+            ${renderDegradationBars()}
+          </article>
         ` : ''}
 
         <article class="panel timeline-panel">
@@ -171,9 +187,10 @@ function render() {
             <button id="debugBtn">${debugMode ? 'Hide debug' : 'Show debug'}</button>
           </div>
           <div class="timeline">
-            ${state.timeline.length ? state.timeline.map((evt) => `<div class="event"><small>#${evt.seq} · ${evt.kind.toUpperCase()}</small>${toReadableEvent(evt)}</div>`).join('') : '<div class="event empty">Select an incident, then the timeline will narrate the investigation.</div>'}
+            ${state.timeline.length ? state.timeline.map((evt) => `<div class="event"><small>#${evt.seq} Â· ${evt.kind.toUpperCase()}</small>${toReadableEvent(evt)}</div>`).join('') : '<div class="event empty">Select an incident, then the timeline will narrate the investigation.</div>'}
           </div>
           ${state.awaitingApproval && state.proposalText ? `<div class="event approval"><small>Human in the loop</small>${state.proposalText}<div class="actions"><button data-action="approve">Approve</button><button data-action="reject">Reject</button><button data-action="modify">Modify scope</button></div></div>` : ''}
+          ${state.showCorrectionWidget ? renderCorrectionWidget() : ''}
           ${debugMode ? `<pre class="debug">${JSON.stringify(state.timeline, null, 2)}</pre>` : ''}
         </article>
       </section>
@@ -181,6 +198,42 @@ function render() {
   `;
 
   wireUi();
+}
+
+function renderDegradationBars() {
+  if (!state.degradedNodes.length) return '<div class="event empty">Waiting for topology and impact correlation.</div>';
+  return `
+    <div class="degradation-bars">
+      ${state.degradedNodes.map((node) => `
+        <div class="degradation-row">
+          <div class="degradation-label">${node.id}</div>
+          <div class="degradation-track"><div class="degradation-fill" style="width:${node.degradation}%"></div></div>
+          <div class="degradation-value">${node.degradation}%</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderCorrectionWidget() {
+  return `
+    <div class="correction-widget">
+      <div class="panel-heading">
+        <h2>Correction Nodes (Real-time)</h2>
+        <div class="panel-note">Latency / Error Rate / Packet Loss</div>
+      </div>
+      <div class="metric-grid">
+        ${state.correctionMetrics.map((metric) => `
+          <div class="metric-card">
+            <strong>${metric.id}</strong>
+            <small>Latency: ${metric.latencyMs} ms</small>
+            <small>Error rate: ${Number(metric.errorRate).toFixed(2)}%</small>
+            <small>Packet loss: ${Number(metric.packetLoss).toFixed(2)}%</small>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
 }
 
 function renderDonut(service) {
@@ -213,19 +266,20 @@ function renderTopology() {
 }
 
 function toReadableEvent(evt) {
+  const payload = evt.payload ?? {};
   if (evt.kind === 'ag-ui') {
     switch (evt.type) {
-      case 'intent.received': return `Intent received for incident <b>${evt.payload.incidentId}</b>.`;
-      case 'agent.plan': return `Plan: ${evt.payload.steps.join(' -> ')}.`;
-      case 'tool.called': return `Tool called: <b>${evt.payload.tool}</b>.`;
-      case 'state.updated': return `State updated: <b>${evt.payload.summary ?? evt.payload.suspectedLayer ?? evt.payload.status}</b>.`;
+      case 'intent.received': return `Intent received for incident <b>${payload.incidentId ?? 'Unknown'}</b>.`;
+      case 'agent.plan': return `Plan: ${(payload.steps ?? []).join(' -> ') || 'No steps provided'}.`;
+      case 'tool.called': return `Tool called: <b>${payload.tool ?? 'Unknown tool'}</b>.`;
+      case 'state.updated': return `State updated: <b>${payload.summary ?? payload.suspectedLayer ?? payload.status ?? payload.note ?? 'Update received'}</b>.`;
       case 'approval.requested': return 'Approval requested from operator.';
-      case 'user.action': return `User selected <b>${evt.payload.action}</b>.`;
-      case 'agent.completed': return evt.payload.summary;
+      case 'user.action': return `User selected <b>${payload.action ?? 'an action'}</b>.`;
+      case 'agent.completed': return payload.summary ?? 'Agent completed the investigation flow.';
       default: return evt.type;
     }
   }
-  return `A2UI mutation: <b>${evt.type}</b> on <b>${evt.target}</b>.`;
+  return `A2UI mutation: <b>${evt.type ?? 'unknown'}</b> on <b>${evt.target ?? 'unknown target'}</b>.`;
 }
 
 function wireUi() {
@@ -243,6 +297,10 @@ function wireUi() {
     state.awaitingApproval = false;
     state.proposalText = null;
     state.agentStatus = 'idle';
+    state.investigationMode = false;
+    state.degradedNodes = [];
+    state.showCorrectionWidget = false;
+    state.correctionMetrics = [];
     state.incidents = allIncidents;
     state.health = defaultHealth;
     state.impact = [
@@ -282,8 +340,14 @@ const renderer = {
     if (msg.target === 'incidents') state.incidents = msg.payload.incidents ?? state.incidents;
     if (msg.target === 'health') state.health = msg.payload.health ?? state.health;
     if (msg.target === 'impact') state.impact = msg.payload.impact ?? state.impact;
+    if (msg.target === 'degradation') state.degradedNodes = msg.payload.nodes ?? state.degradedNodes;
+    if (msg.target === 'correction') {
+      state.showCorrectionWidget = msg.payload.visible ?? state.showCorrectionWidget;
+      state.correctionMetrics = msg.payload.metrics ?? state.correctionMetrics;
+    }
     if (msg.target === 'topology') {
       state.showTopology = true;
+      state.investigationMode = true;
       state.selectedNodeId = msg.payload.selectedNodeId ?? state.selectedNodeId;
       state.neighborIds = msg.payload.neighborIds ?? state.neighborIds;
       state.focusedSegment = msg.payload.focusedSegment ?? state.focusedSegment;
