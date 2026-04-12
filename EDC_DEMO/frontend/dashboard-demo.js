@@ -91,6 +91,7 @@ const state = {
   agentStatus: 'idle',
   investigationMode: false,
   degradedNodes: [],
+  degradationHistory: [],
   showCorrectionWidget: false,
   correctionMetrics: []
 };
@@ -170,14 +171,15 @@ function render() {
             </div>
             ${renderTopology()}
             <div class="topology-caption">Topology is shown only after the agent expands the affected scope and service impact.</div>
+            ${state.showCorrectionWidget ? renderCorrectionWidget() : ''}
           </article>
 
           <article class="panel degradation-panel">
             <div class="panel-heading">
               <h2>Impacted Node Degradation</h2>
-              <div class="panel-note">Degradation % (higher is worse)</div>
+              <div class="panel-note">Degradation trend over time (higher is worse)</div>
             </div>
-            ${renderDegradationBars()}
+            ${renderDegradationChart()}
           </article>
         ` : ''}
 
@@ -190,7 +192,6 @@ function render() {
             ${state.timeline.length ? state.timeline.map((evt) => `<div class="event"><small>#${evt.seq} · ${evt.kind.toUpperCase()}</small>${toReadableEvent(evt)}</div>`).join('') : '<div class="event empty">Select an incident, then the timeline will narrate the investigation.</div>'}
           </div>
           ${state.awaitingApproval && state.proposalText ? `<div class="event approval"><small>Human in the loop</small>${state.proposalText}<div class="actions"><button data-action="approve">Approve</button><button data-action="reject">Reject</button><button data-action="modify">Modify scope</button></div></div>` : ''}
-          ${state.showCorrectionWidget ? renderCorrectionWidget() : ''}
           ${debugMode ? `<pre class="debug">${JSON.stringify(state.timeline, null, 2)}</pre>` : ''}
         </article>
       </section>
@@ -200,19 +201,73 @@ function render() {
   wireUi();
 }
 
-function renderDegradationBars() {
+function renderDegradationChart() {
   if (!state.degradedNodes.length) return '<div class="event empty">Waiting for topology and impact correlation.</div>';
+
+  const history = state.degradationHistory;
+  const nodeIds = state.degradedNodes.map((node) => node.id);
+  const width = 560;
+  const height = 260;
+  const padding = { top: 20, right: 20, bottom: 44, left: 44 };
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+  const colorPalette = ['#ef476f', '#4cc9f0', '#ffd166', '#43d9a3', '#f78c6b', '#c792ea'];
+  const nodeColors = Object.fromEntries(nodeIds.map((id, idx) => [id, colorPalette[idx % colorPalette.length]]));
+
+  const xFor = (idx) => padding.left + ((plotWidth * idx) / Math.max(1, history.length - 1));
+  const yFor = (value) => padding.top + ((100 - value) / 100) * plotHeight;
+  const yTicks = [0, 25, 50, 75, 100];
+  const labelIndexes = [...new Set([0, Math.floor((history.length - 1) / 2), history.length - 1])];
+
   return `
-    <div class="degradation-bars">
-      ${state.degradedNodes.map((node) => `
-        <div class="degradation-row">
-          <div class="degradation-label">${node.id}</div>
-          <div class="degradation-track"><div class="degradation-fill" style="width:${node.degradation}%"></div></div>
-          <div class="degradation-value">${node.degradation}%</div>
-        </div>
-      `).join('')}
+    <div class="degradation-chart-wrap">
+      <svg class="degradation-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Impacted node degradation line chart with time reference">
+        ${yTicks.map((tick) => `
+          <g class="axis-tick">
+            <line x1="${padding.left}" y1="${yFor(tick)}" x2="${width - padding.right}" y2="${yFor(tick)}"></line>
+            <text x="${padding.left - 8}" y="${yFor(tick) + 4}" text-anchor="end">${tick}%</text>
+          </g>
+        `).join('')}
+        ${nodeIds.map((nodeId) => {
+          const pathData = history.map((snapshot, idx) => {
+            const point = snapshot.nodes.find((node) => node.id === nodeId);
+            if (!point) return null;
+            return `${idx === 0 ? 'M' : 'L'} ${xFor(idx)} ${yFor(point.degradation)}`;
+          }).filter(Boolean).join(' ');
+          return `<path class="degradation-line" d="${pathData}" style="--line:${nodeColors[nodeId]}"></path>`;
+        }).join('')}
+        ${labelIndexes.map((idx) => `
+          <text class="time-label" x="${xFor(idx)}" y="${height - 16}" text-anchor="middle">${formatTimeLabel(history[idx].timestamp)}</text>
+        `).join('')}
+      </svg>
+      <div class="degradation-legend">
+        ${nodeIds.map((nodeId) => `<span><i style="--swatch:${nodeColors[nodeId]}"></i>${nodeId}</span>`).join('')}
+      </div>
     </div>
   `;
+}
+
+function formatTimeLabel(timestamp) {
+  return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function appendDegradationSnapshot(nodes, timestamp = Date.now()) {
+  if (!nodes?.length) return;
+  if (!state.degradationHistory.length) {
+    for (let offset = 4; offset >= 1; offset -= 1) {
+      state.degradationHistory.push({
+        timestamp: timestamp - (offset * 60000),
+        nodes: nodes.map((node) => ({
+          id: node.id,
+          degradation: Math.min(100, node.degradation + (offset * 4))
+        }))
+      });
+    }
+  }
+  state.degradationHistory = [
+    ...state.degradationHistory,
+    { timestamp, nodes: nodes.map((node) => ({ ...node })) }
+  ].slice(-16);
 }
 
 function renderCorrectionWidget() {
@@ -299,6 +354,7 @@ function wireUi() {
     state.agentStatus = 'idle';
     state.investigationMode = false;
     state.degradedNodes = [];
+    state.degradationHistory = [];
     state.showCorrectionWidget = false;
     state.correctionMetrics = [];
     state.incidents = allIncidents;
@@ -340,7 +396,10 @@ const renderer = {
     if (msg.target === 'incidents') state.incidents = msg.payload.incidents ?? state.incidents;
     if (msg.target === 'health') state.health = msg.payload.health ?? state.health;
     if (msg.target === 'impact') state.impact = msg.payload.impact ?? state.impact;
-    if (msg.target === 'degradation') state.degradedNodes = msg.payload.nodes ?? state.degradedNodes;
+    if (msg.target === 'degradation') {
+      state.degradedNodes = msg.payload.nodes ?? state.degradedNodes;
+      appendDegradationSnapshot(state.degradedNodes, msg.payload.timestamp);
+    }
     if (msg.target === 'correction') {
       state.showCorrectionWidget = msg.payload.visible ?? state.showCorrectionWidget;
       state.correctionMetrics = msg.payload.metrics ?? state.correctionMetrics;
