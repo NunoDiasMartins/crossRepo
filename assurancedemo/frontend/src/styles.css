@@ -23,14 +23,31 @@ main { flex: 1; display: grid; grid-template-columns: 1.7fr 1fr; gap: 14px; padd
 .metric-grid span, .before-after-grid span { display: block; font-size: 12px; color: #94afd2; }
 .sparkline { margin-top: 16px; display: flex; align-items: end; gap: 6px; height: 80px; }
 .sparkline span { width: 14px; background: linear-gradient(#ff8e45, #dc3e3e); border-radius: 3px 3px 0 0; }
-.topology-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; }
-.topology-graph { border: 1px solid #355f98; border-radius: 8px; padding: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
-.node { padding: 6px 10px; border-radius: 999px; background: #214477; font-size: 13px; border: 1px solid transparent; }
-.node.impacted { background: #8f2d2d; border-color: #f08774; }
-.node.root-cause { background: #8b1f5d; border-color: #ef8ec6; }
-.node.causal { box-shadow: 0 0 0 1px #84a4cc inset; }
-.edges { width: 100%; margin-top: 8px; color: #84a4cc; font-size: 12px; }
-.blast-radius { border: 1px solid #355f98; border-radius: 8px; padding: 10px; }
+.topology-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; align-items: start; }
+.topology-canvas-card { border: 1px solid #355f98; border-radius: 10px; padding: 8px; position: relative; background: linear-gradient(180deg, #0c1b36, #091329); overflow: hidden; }
+.topology-canvas { width: 100%; height: auto; display: block; cursor: default; }
+.topology-backdrop { stroke: #3a68a6; stroke-width: 1.2; }
+.topology-grid { fill: transparent; opacity: 0.18; stroke: #7db3ff; stroke-width: 0.3; stroke-dasharray: 3 7; }
+.blast-overlay .blast-halo { pointer-events: none; }
+.blast-halo.outer { fill: rgba(255, 96, 134, 0.08); }
+.blast-halo.mid { fill: rgba(255, 96, 134, 0.13); }
+.blast-halo.inner { fill: rgba(255, 96, 134, 0.2); }
+.topology-link { fill: none; stroke: rgba(103, 177, 255, 0.58); stroke-width: 1.8; transition: stroke 160ms ease, opacity 160ms ease, stroke-width 160ms ease; }
+.topology-link.selected { stroke: #ffd166; stroke-width: 2.2; }
+.topology-link.dimmed { opacity: 0.2; }
+.topology-node { cursor: pointer; transition: opacity 160ms ease, transform 160ms ease; }
+.node-core { fill: #3366aa; stroke: #85b5ff; stroke-width: 1.1; }
+.node-glow { opacity: 0.3; }
+.topology-node.impacted .node-core { fill: #ad3c42; stroke: #ff9f97; }
+.topology-node.root-cause .node-core { fill: #b62f8f; stroke: #ffc0e6; }
+.topology-node.causal .node-core { stroke: #fbd57e; }
+.topology-node.selected .node-core { stroke: #ffe89a; stroke-width: 2; }
+.topology-node.dimmed { opacity: 0.22; }
+.node-label { fill: #d7e8ff; font-size: 11px; font-weight: 500; pointer-events: none; }
+.topology-tooltip { position: absolute; min-width: 170px; max-width: 200px; pointer-events: none; background: rgba(7, 15, 31, 0.96); border: 1px solid #4e78b3; border-radius: 8px; padding: 8px 10px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35); font-size: 12px; }
+.topology-tooltip strong { color: #f5fbff; }
+.topology-tooltip p { margin: 4px 0 0; color: #b4cbed; }
+.blast-radius { border: 1px solid #355f98; border-radius: 8px; padding: 10px; background: rgba(10, 26, 50, 0.72); }
 .kpi-row { margin-bottom: 12px; }
 .kpi-bars { display: flex; gap: 5px; align-items: end; height: 58px; }
 .kpi-bars i { display: inline-block; width: 10px; border-radius: 2px; background: linear-gradient(#47b1ff, #2b5ea9); }
