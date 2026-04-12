@@ -62,16 +62,57 @@ const topologyEdges: string[][] = [
 export const surfaces = {
   serviceOverview: {
     surface: 'service-overview',
-    title: 'Service Overview',
+    title: 'Service Assurance Dashboard',
     component: 'ServiceOverviewCard',
     props: {
       metrics: {
         slaCompliance: 97.8,
         latencyP95: 148,
         activeAlarms: 3,
-        impactedEndpoints: 1200
+        impactedEndpoints: 1200,
+        availability: 99.71,
+        majorIncidents: 2,
+        mttrMinutes: 24,
+        atRiskSlas: 1
       },
-      sparkline: [95, 93, 94, 90, 85, 81, 79]
+      temporalSeries: {
+        availability: [
+          { time: '00:00', value: 99.98 },
+          { time: '04:00', value: 99.96 },
+          { time: '08:00', value: 99.91 },
+          { time: '12:00', value: 99.83 },
+          { time: '16:00', value: 99.77 },
+          { time: '20:00', value: 99.72 },
+          { time: '23:59', value: 99.71 }
+        ],
+        latency: [
+          { time: '00:00', value: 48 },
+          { time: '04:00', value: 55 },
+          { time: '08:00', value: 63 },
+          { time: '12:00', value: 88 },
+          { time: '16:00', value: 112 },
+          { time: '20:00', value: 139 },
+          { time: '23:59', value: 148 }
+        ],
+        errorRate: [
+          { time: '00:00', value: 0.2 },
+          { time: '04:00', value: 0.3 },
+          { time: '08:00', value: 0.4 },
+          { time: '12:00', value: 0.8 },
+          { time: '16:00', value: 1.3 },
+          { time: '20:00', value: 1.9 },
+          { time: '23:59', value: 2.2 }
+        ],
+        throughput: [
+          { time: '00:00', value: 432 },
+          { time: '04:00', value: 421 },
+          { time: '08:00', value: 401 },
+          { time: '12:00', value: 372 },
+          { time: '16:00', value: 341 },
+          { time: '20:00', value: 319 },
+          { time: '23:59', value: 309 }
+        ]
+      }
     }
   },
   impactTopology: {
@@ -94,6 +135,7 @@ export const surfaces = {
     title: 'KPI Correlation',
     component: 'KpiCorrelationPanel',
     props: {
+      timestamps: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '23:59'],
       series: {
         serviceAvailability: [99.98, 99.97, 99.94, 99.9, 99.82, 99.76, 99.71],
         latencyP95: [44, 46, 48, 62, 89, 122, 148],

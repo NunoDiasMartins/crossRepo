@@ -159,7 +159,15 @@ export default function App() {
   const renderedSurface = useMemo(() => {
     if (!surface || !appState.service) return <div className="empty-surface">Awaiting agent-composed UI surface...</div>;
     if (surface.component === 'ServiceOverviewCard') {
-      return <ServiceOverviewCard title={surface.title} serviceName={appState.service.name} metrics={(surface.props as any).metrics} sparkline={(surface.props as any).sparkline} />;
+      return (
+        <ServiceOverviewCard
+          title={surface.title}
+          serviceName={appState.service.name}
+          metrics={(surface.props as any).metrics}
+          sparkline={(surface.props as any).sparkline}
+          temporalSeries={(surface.props as any).temporalSeries}
+        />
+      );
     }
     if (surface.component === 'TopologyView') {
       return (
@@ -173,7 +181,16 @@ export default function App() {
         />
       );
     }
-    if (surface.component === 'KpiCorrelationPanel') return <KpiCorrelationPanel title={surface.title} series={(surface.props as any).series} insight={(surface.props as any).insight} />;
+    if (surface.component === 'KpiCorrelationPanel') {
+      return (
+        <KpiCorrelationPanel
+          title={surface.title}
+          series={(surface.props as any).series}
+          insight={(surface.props as any).insight}
+          timestamps={(surface.props as any).timestamps}
+        />
+      );
+    }
     return <ResolutionPanel title={surface.title} beforeAfter={(surface.props as any).beforeAfter} recoveredDevices={(surface.props as any).recoveredDevices} timeline={(surface.props as any).timeline} />;
   }, [surface, appState]);
 
