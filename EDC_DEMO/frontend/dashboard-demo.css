@@ -304,6 +304,59 @@ button:disabled {
   gap: 10px;
 }
 
+.degradation-chart-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.degradation-chart {
+  width: 100%;
+  min-height: 260px;
+  border-radius: 8px;
+  background: #0b1226;
+  border: 1px solid #2e3a63;
+}
+
+.axis-tick line {
+  stroke: #22345f;
+  stroke-width: 1;
+}
+
+.axis-tick text,
+.time-label {
+  fill: #8ea0cf;
+  font-size: 11px;
+}
+
+.degradation-line {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 3;
+}
+
+.degradation-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  font-size: 12px;
+}
+
+.degradation-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #c9d6ff;
+}
+
+.degradation-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--swatch);
+  display: inline-block;
+}
+
 .degradation-row {
   display: grid;
   grid-template-columns: 1fr 2fr auto;
