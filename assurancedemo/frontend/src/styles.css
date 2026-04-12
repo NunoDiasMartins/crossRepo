@@ -1,0 +1,37 @@
+:root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; }
+body { margin: 0; background: #071022; color: #d8e0ef; }
+.app-shell { height: 100vh; display: flex; flex-direction: column; }
+header { display: flex; align-items: center; gap: 14px; padding: 12px 20px; border-bottom: 1px solid #1b3357; background: #0b1730; }
+header h1 { font-size: 1.2rem; margin: 0; }
+.badge { background: #113668; border: 1px solid #2866b8; border-radius: 999px; padding: 4px 10px; font-size: 12px; }
+header select { margin-left: auto; padding: 6px; background: #102542; color: #d8e0ef; border: 1px solid #2f5285; }
+main { flex: 1; display: grid; grid-template-columns: 1fr 1.7fr 1fr; gap: 14px; padding: 14px; }
+.panel { background: linear-gradient(160deg, #0f1f3d, #0b1730); border: 1px solid #24436f; border-radius: 12px; padding: 12px; overflow: auto; }
+.timeline-item { margin-bottom: 10px; padding: 10px; border-left: 3px solid #3f78c9; background: rgba(8, 29, 57, 0.7); border-radius: 8px; animation: fadeIn 240ms ease-in; }
+.timeline-item.user { border-left-color: #5fbf94; }
+.timeline-item.event { border-left-color: #ef9e38; }
+.timeline-item p { margin: 0 0 5px; }
+.timeline-item small { color: #84a4cc; }
+.surface-card h2 { margin: 0 0 8px; }
+.metric-grid, .before-after-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.metric-grid div, .before-after-grid div { background: #0b2447; border: 1px solid #2a4c7e; border-radius: 8px; padding: 10px; }
+.metric-grid span, .before-after-grid span { display: block; font-size: 12px; color: #94afd2; }
+.sparkline { margin-top: 16px; display: flex; align-items: end; gap: 6px; height: 80px; }
+.sparkline span { width: 14px; background: linear-gradient(#ff8e45, #dc3e3e); border-radius: 3px 3px 0 0; }
+.topology-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; }
+.topology-graph { border: 1px solid #355f98; border-radius: 8px; padding: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+.node { padding: 6px 10px; border-radius: 999px; background: #214477; font-size: 13px; }
+.node.impacted { background: #8f2d2d; border: 1px solid #f08774; }
+.edges { width: 100%; margin-top: 8px; color: #84a4cc; font-size: 12px; }
+.blast-radius { border: 1px solid #355f98; border-radius: 8px; padding: 10px; }
+.kpi-row { margin-bottom: 12px; }
+.kpi-bars { display: flex; gap: 5px; align-items: end; height: 58px; }
+.kpi-bars i { display: inline-block; width: 10px; border-radius: 2px; background: linear-gradient(#47b1ff, #2b5ea9); }
+.insight { background: #3e2a19; border: 1px solid #ad6c26; padding: 10px; border-radius: 8px; }
+.fault-tree { border-left: 2px solid #486d9d; padding-left: 14px; }
+.alarm-card, .entity-list { background: #0b2447; border: 1px solid #2a4c7e; border-radius: 8px; padding: 10px; margin-bottom: 12px; }
+.actions { display: grid; gap: 8px; }
+button { padding: 9px 10px; background: #285fa8; color: #fff; border: 0; border-radius: 8px; cursor: pointer; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+.empty-surface { border: 1px dashed #3d6094; border-radius: 10px; padding: 26px; color: #89a6cc; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
