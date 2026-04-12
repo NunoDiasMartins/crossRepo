@@ -95,12 +95,18 @@ export const surfaces = {
     component: 'KpiCorrelationPanel',
     props: {
       series: {
+        serviceAvailability: [99.98, 99.97, 99.94, 99.9, 99.82, 99.76, 99.71],
+        latencyP95: [44, 46, 48, 62, 89, 122, 148],
+        throughputDlUl: [421, 416, 403, 378, 342, 321, 309],
+        sessionSuccessRate: [99.4, 99.3, 99.2, 98.8, 98.1, 97.2, 96.8],
+        dropRate: [0.2, 0.3, 0.4, 0.9, 1.6, 2.4, 3.1],
         prbUtilization: [62, 64, 66, 74, 81, 88, 91],
-        handoverFailures: [1.2, 1.4, 1.8, 2.9, 4.3, 6.1, 6.4],
-        latency: [44, 46, 48, 62, 89, 122, 148],
-        packetLoss: [0.1, 0.2, 0.3, 0.8, 1.1, 1.7, 2.2]
+        handoverSuccessRate: [99.1, 99.0, 98.8, 98.1, 97.3, 96.4, 95.9],
+        sliceSlaCompliance: [99.8, 99.7, 99.6, 99.1, 98.7, 98.2, 97.8],
+        packetLoss: [0.1, 0.2, 0.3, 0.8, 1.1, 1.7, 2.2],
+        alarmCorrelationCount: [2, 3, 3, 5, 8, 11, 14]
       },
-      insight: 'PRB utilization and handover failures are strongly correlated with latency spike in the same window.'
+      insight: 'Drop rate and packet loss are impacted by the ongoing transport congestion, alongside the latency spike.'
     }
   },
   rca: {
@@ -131,6 +137,7 @@ export const surfaces = {
       beforeAfter: {
         latencyP95: { before: 148, after: 52 },
         slaCompliance: { before: 97.8, after: 99.95 },
+        dropRate: { before: 3.1, after: 0.3 },
         packetLoss: { before: 2.2, after: 0.2 }
       },
       recoveredDevices: 1200,
@@ -139,7 +146,7 @@ export const surfaces = {
         'Correlated congestion + handover failures',
         'Identified transport-link-a congestion',
         'Rerouted traffic to secondary path',
-        'KPI recovery confirmed'
+        'KPI recovery confirmed (drop rate + packet loss improved)'
       ]
     }
   }
