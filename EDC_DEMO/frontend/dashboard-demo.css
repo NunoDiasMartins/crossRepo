@@ -71,12 +71,18 @@ button:disabled {
   grid-template-areas: "overview incidents timeline";
   gap: 12px;
   min-height: calc(100vh - 90px);
+  max-height: calc(100vh - 90px);
 }
 
 .layout.topology-active {
   grid-template-areas:
     "overview incidents timeline"
-    "topology topology timeline";
+    "topology degradation timeline";
+}
+
+.layout.topology-active.investigation-mode {
+  grid-template-columns: 1.5fr 1fr 1fr;
+  grid-template-areas: "topology degradation timeline";
 }
 
 .panel {
@@ -91,6 +97,7 @@ button:disabled {
 .overview-panel { grid-area: overview; }
 .incidents-panel { grid-area: incidents; }
 .topology-panel { grid-area: topology; }
+.degradation-panel { grid-area: degradation; }
 .timeline-panel { grid-area: timeline; }
 
 .panel-heading {
@@ -252,11 +259,19 @@ button:disabled {
 .link.focus { stroke: #ef476f; stroke-width: 3; }
 
 .timeline {
+  flex: 1;
+  min-height: 0;
+  max-height: 100%;
   overflow: auto;
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding-right: 4px;
+}
+
+.timeline-panel {
+  min-height: 0;
+  max-height: 100%;
 }
 
 .event {
@@ -283,6 +298,63 @@ button:disabled {
   overflow: auto;
 }
 
+.degradation-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.degradation-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.degradation-label,
+.degradation-value {
+  font-size: 12px;
+  color: #c9d6ff;
+}
+
+.degradation-track {
+  background: #172242;
+  border: 1px solid #2e3a63;
+  border-radius: 999px;
+  height: 12px;
+  overflow: hidden;
+}
+
+.degradation-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffca6f, #ef476f);
+}
+
+.correction-widget {
+  margin-top: 10px;
+  border-top: 1px solid #2e3a63;
+  padding-top: 10px;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.metric-card {
+  border: 1px solid #2e3a63;
+  background: #0b1226;
+  border-radius: 8px;
+  padding: 8px;
+  display: grid;
+  gap: 4px;
+}
+
+.metric-card small {
+  color: #aebce5;
+}
+
 @media (max-width: 1100px) {
   .layout,
   .layout.topology-active {
@@ -291,6 +363,7 @@ button:disabled {
       "overview"
       "incidents"
       "timeline"
+      "degradation"
       "topology";
   }
 
