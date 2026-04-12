@@ -191,7 +191,7 @@ export default function App() {
         />
       );
     }
-    return <ResolutionPanel title={surface.title} beforeAfter={(surface.props as any).beforeAfter} recoveredDevices={(surface.props as any).recoveredDevices} timeline={(surface.props as any).timeline} />;
+    return <ResolutionPanel title={surface.title} beforeAfter={(surface.props as any).beforeAfter} recoveredDevices={(surface.props as any).recoveredDevices} timeline={(surface.props as any).timeline} recoverySeries={(surface.props as any).recoverySeries} recoveryLabels={(surface.props as any).recoveryLabels} />;
   }, [surface, appState]);
 
   return (
