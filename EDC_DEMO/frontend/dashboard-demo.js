@@ -76,6 +76,21 @@ const defaultImpact = [
   { label: 'Recommended action', value: 'Awaiting investigation' }
 ];
 
+const kpiCatalog = [
+  { name: 'Access Availability', domain: 'Access', value: '99.2%', trend: '+0.1%', status: 'Healthy' },
+  { name: 'RAN Packet Loss', domain: 'Access', value: '1.8%', trend: '+0.6%', status: 'Watch' },
+  { name: 'Session Setup Success', domain: 'Core', value: '96.4%', trend: '-0.3%', status: 'Watch' },
+  { name: 'Core Signaling Latency', domain: 'Core', value: '38 ms', trend: '+9 ms', status: 'Risk' },
+  { name: 'API Gateway Error Rate', domain: 'Digital', value: '0.9%', trend: '+0.2%', status: 'Watch' },
+  { name: 'Digital Checkout Completion', domain: 'Digital', value: '94.7%', trend: '+0.4%', status: 'Healthy' },
+  { name: 'DB Replication Lag', domain: 'Data', value: '220 ms', trend: '+45 ms', status: 'Watch' },
+  { name: 'Data Ingest Throughput', domain: 'Data', value: '4.8 Gbps', trend: '-0.2 Gbps', status: 'Healthy' },
+  { name: 'Transport Link Utilization', domain: 'Transport', value: '83%', trend: '+5%', status: 'Watch' },
+  { name: 'Transport Error Bursts', domain: 'Transport', value: '14/hr', trend: '+6/hr', status: 'Risk' },
+  { name: 'Customer Login Success', domain: 'Experience', value: '98.6%', trend: '-0.1%', status: 'Healthy' },
+  { name: 'Voice Service MOS', domain: 'Experience', value: '4.1/5', trend: '-0.2', status: 'Watch' }
+];
+
 const state = {
   selectedIncidentId: null,
   selectedNodeId: null,
@@ -93,7 +108,8 @@ const state = {
   degradedNodes: [],
   degradationHistory: [],
   showCorrectionWidget: false,
-  correctionMetrics: []
+  correctionMetrics: [],
+  activeView: 'dashboard'
 };
 
 const app = document.querySelector('#app');
@@ -109,7 +125,7 @@ function render() {
       <header class="header">
         <div>
           <div class="title">Agent-First Assurance Dashboard Demo</div>
-          <div class="subtitle">Start from service health, then let the agent reveal the topology only when it becomes relevant.</div>
+          <div class="subtitle">Navigate between dashboard operations, full KPI inventory, and complete network topology.</div>
         </div>
         <div class="chips">
           <span class="chip">Incident: ${state.selectedIncidentId ?? 'None'}</span>
@@ -118,6 +134,23 @@ function render() {
         </div>
       </header>
 
+      <nav class="top-nav" aria-label="Demo sections">
+        <button class="top-nav-item ${state.activeView === 'dashboard' ? 'active' : ''}" data-view="dashboard">Service Dashboard</button>
+        <button class="top-nav-item ${state.activeView === 'kpis' ? 'active' : ''}" data-view="kpis">KPI Catalog</button>
+        <button class="top-nav-item ${state.activeView === 'network' ? 'active' : ''}" data-view="network">Network Topology</button>
+      </nav>
+
+      ${state.activeView === 'dashboard' ? renderDashboardView() : ''}
+      ${state.activeView === 'kpis' ? renderKpiView() : ''}
+      ${state.activeView === 'network' ? renderNetworkTopologyView() : ''}
+    </main>
+  `;
+
+  wireUi();
+}
+
+function renderDashboardView() {
+  return `
       <section class="layout ${state.showTopology ? 'topology-active' : ''} ${state.investigationMode ? 'investigation-mode' : ''}">
         ${state.investigationMode ? '' : `
         <article class="panel overview-panel">
@@ -195,10 +228,53 @@ function render() {
           ${debugMode ? `<pre class="debug">${JSON.stringify(state.timeline, null, 2)}</pre>` : ''}
         </article>
       </section>
-    </main>
   `;
+}
 
-  wireUi();
+function renderKpiView() {
+  return `
+    <section class="single-view">
+      <article class="panel kpi-panel">
+        <div class="panel-heading">
+          <h2>All Network KPIs</h2>
+          <div class="panel-note">Complete KPI inventory across service domains</div>
+        </div>
+        <div class="kpi-table" role="table" aria-label="KPI catalog table">
+          <div class="kpi-row kpi-header" role="row">
+            <span role="columnheader">KPI</span>
+            <span role="columnheader">Domain</span>
+            <span role="columnheader">Current</span>
+            <span role="columnheader">Trend</span>
+            <span role="columnheader">Status</span>
+          </div>
+          ${kpiCatalog.map((kpi) => `
+            <div class="kpi-row" role="row">
+              <span>${kpi.name}</span>
+              <span>${kpi.domain}</span>
+              <span>${kpi.value}</span>
+              <span>${kpi.trend}</span>
+              <span class="kpi-status ${kpi.status.toLowerCase()}">${kpi.status}</span>
+            </div>
+          `).join('')}
+        </div>
+      </article>
+    </section>
+  `;
+}
+
+function renderNetworkTopologyView() {
+  return `
+    <section class="single-view">
+      <article class="panel network-panel">
+        <div class="panel-heading">
+          <h2>Complete Network Topology</h2>
+          <div class="panel-note">End-to-end view of access, transport, service, and data nodes</div>
+        </div>
+        ${renderTopology({ fullNetwork: true })}
+        <div class="topology-caption">This page keeps the entire topology visible for broad operational context.</div>
+      </article>
+    </section>
+  `;
 }
 
 function renderDegradationChart() {
@@ -305,16 +381,17 @@ function renderDonut(service) {
   `;
 }
 
-function renderTopology() {
+function renderTopology(options = {}) {
+  const showFullNetwork = options.fullNetwork === true;
   const nodes = topology.nodes.map((node) => {
-    const cls = ['node', state.selectedNodeId === node.id ? 'selected' : '', state.neighborIds.includes(node.id) ? 'neighbor' : '', state.focusedSegment && state.focusedSegment === node.segment ? 'focus' : ''].filter(Boolean).join(' ');
+    const cls = ['node', !showFullNetwork && state.selectedNodeId === node.id ? 'selected' : '', !showFullNetwork && state.neighborIds.includes(node.id) ? 'neighbor' : '', !showFullNetwork && state.focusedSegment && state.focusedSegment === node.segment ? 'focus' : ''].filter(Boolean).join(' ');
     return `<g class="${cls}"><circle cx="${node.x}" cy="${node.y}" r="22"></circle><text x="${node.x}" y="${node.y + 4}" text-anchor="middle">${node.id}</text></g>`;
   }).join('');
 
   const links = topology.links.map((link) => {
     const source = topology.nodes.find((node) => node.id === link.source);
     const target = topology.nodes.find((node) => node.id === link.target);
-    return `<line class="link ${state.focusedSegment && state.focusedSegment === link.segment ? 'focus' : ''}" x1="${source.x}" y1="${source.y}" x2="${target.x}" y2="${target.y}" />`;
+    return `<line class="link ${!showFullNetwork && state.focusedSegment && state.focusedSegment === link.segment ? 'focus' : ''}" x1="${source.x}" y1="${source.y}" x2="${target.x}" y2="${target.y}" />`;
   }).join('');
 
   return `<svg class="topology-svg" viewBox="0 0 700 300">${links}${nodes}</svg>`;
@@ -338,6 +415,11 @@ function toReadableEvent(evt) {
 }
 
 function wireUi() {
+  document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => {
+    state.activeView = button.dataset.view;
+    render();
+  }));
+
   document.querySelectorAll('[data-incident]').forEach((button) => button.addEventListener('click', () => {
     const incidentId = button.dataset.incident;
     const incident = allIncidents.find((item) => item.id === incidentId);

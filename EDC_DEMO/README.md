@@ -304,16 +304,23 @@ http://localhost:8000/dashboard-demo
 
 ### Dashboard Demo Theme
 
-This route starts with service health donuts and an incident queue instead of showing the topology immediately.
+This route now includes a top-level navigation menu with three pages:
+
+- **Service Dashboard** (default landing page)
+- **KPI Catalog** (full list of KPIs)
+- **Network Topology** (full end-to-end network view)
+
+The **Service Dashboard** page still starts with service health donuts and an incident queue instead of showing the topology immediately.
 
 The user journey is:
 
-1. review service health and open incidents
-2. select one incident
-3. click **Investigate issue** once an incident is selected
-4. watch the agent reveal topology, expand service impact, and request approval
+1. start on **Service Dashboard** to review service health and open incidents
+2. optionally switch to **KPI Catalog** to inspect all KPIs
+3. optionally switch to **Network Topology** for a full network map
+4. return to **Service Dashboard**, select one incident, and click **Investigate issue**
+5. watch the agent reveal focused topology scope, expand service impact, and request approval
 
-This version is useful when you want the audience to see the topology as an agent-driven reveal rather than as the opening frame.
+This version is useful when you want both realistic top-level navigation and the original agent-driven topology reveal workflow.
 
 ## Fifth Demo Path
 
