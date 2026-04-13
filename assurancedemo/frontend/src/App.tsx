@@ -22,11 +22,49 @@ const capabilityAnnouncement = [
 ];
 
 const API = 'http://localhost:8787';
+type TopLevelPage = 'dashboard' | 'kpis' | 'topology';
+
+const DEFAULT_KPI_TIMESTAMPS = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '23:59'];
+
+const DEFAULT_KPI_SERIES = {
+  serviceAvailability: [99.98, 99.97, 99.94, 99.9, 99.82, 99.76, 99.71],
+  latencyP95: [44, 46, 48, 62, 89, 122, 148],
+  throughputDlUl: [421, 416, 403, 378, 342, 321, 309],
+  sessionSuccessRate: [99.4, 99.3, 99.2, 98.8, 98.1, 97.2, 96.8],
+  dropRate: [0.2, 0.3, 0.4, 0.9, 1.6, 2.4, 3.1],
+  prbUtilization: [62, 64, 66, 74, 81, 88, 91],
+  handoverSuccessRate: [99.1, 99.0, 98.8, 98.1, 97.3, 96.4, 95.9],
+  sliceSlaCompliance: [99.8, 99.7, 99.6, 99.1, 98.7, 98.2, 97.8],
+  packetLoss: [0.1, 0.2, 0.3, 0.8, 1.1, 1.7, 2.2],
+  alarmCorrelationCount: [2, 3, 3, 5, 8, 11, 14]
+};
+
+const DEFAULT_TOPOLOGY_NODES = [
+  { id: 'transport-link-a', label: 'transport-link-a', type: 'transport', impacted: true },
+  { id: 'gnb-101', label: 'gnb-101', type: 'gnb', impacted: true },
+  { id: 'gnb-102', label: 'gnb-102', type: 'gnb', impacted: true },
+  { id: 'gnb-103', label: 'gnb-103', type: 'gnb', impacted: true },
+  { id: 'cell-101-a', label: 'cell-101-a', type: 'cell', impacted: true },
+  { id: 'cell-101-b', label: 'cell-101-b', type: 'cell', impacted: true },
+  { id: 'cell-102-a', label: 'cell-102-a', type: 'cell', impacted: true },
+  { id: 'cell-103-a', label: 'cell-103-a', type: 'cell', impacted: true }
+];
+
+const DEFAULT_TOPOLOGY_EDGES: string[][] = [
+  ['transport-link-a', 'gnb-101'],
+  ['transport-link-a', 'gnb-102'],
+  ['transport-link-a', 'gnb-103'],
+  ['gnb-101', 'cell-101-a'],
+  ['gnb-101', 'cell-101-b'],
+  ['gnb-102', 'cell-102-a'],
+  ['gnb-103', 'cell-103-a']
+];
 
 export default function App() {
   const [sessionId, setSessionId] = useState('');
   const [appState, setAppState] = useState<AppState>({});
   const [surface, setSurface] = useState<SurfaceSchema | null>(null);
+  const [activePage, setActivePage] = useState<TopLevelPage>('dashboard');
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [suggestedActions, setSuggestedActions] = useState<ActionType[]>([]);
   const timelineScrollRef = useRef<HTMLDivElement | null>(null);
@@ -201,43 +239,98 @@ export default function App() {
     return <ResolutionPanel title={surface.title} beforeAfter={(surface.props as any).beforeAfter} recoveredDevices={(surface.props as any).recoveredDevices} timeline={(surface.props as any).timeline} recoverySeries={(surface.props as any).recoverySeries} recoveryLabels={(surface.props as any).recoveryLabels} />;
   }, [surface, appState]);
 
+  const renderedKpiPage = useMemo(() => {
+    const isLiveKpiSurface = surface?.component === 'KpiCorrelationPanel';
+    const kpiProps = isLiveKpiSurface ? (surface?.props as any) : null;
+
+    return (
+      <KpiCorrelationPanel
+        title={isLiveKpiSurface ? surface.title : 'All Service KPIs'}
+        series={kpiProps?.series ?? DEFAULT_KPI_SERIES}
+        insight={
+          kpiProps?.insight ??
+          'Drop rate and packet loss move with latency spikes, indicating transport congestion impact across the slice.'
+        }
+        timestamps={kpiProps?.timestamps ?? DEFAULT_KPI_TIMESTAMPS}
+      />
+    );
+  }, [surface]);
+
+  const renderedTopologyPage = useMemo(() => {
+    const isLiveTopologySurface = surface?.component === 'TopologyView';
+    const topologyProps = isLiveTopologySurface ? (surface?.props as any) : null;
+
+    return (
+      <TopologyView
+        title={isLiveTopologySurface ? surface.title : 'Network Topology'}
+        mode={topologyProps?.mode ?? 'impact'}
+        nodes={topologyProps?.nodes ?? DEFAULT_TOPOLOGY_NODES}
+        edges={topologyProps?.edges ?? DEFAULT_TOPOLOGY_EDGES}
+        blastRadius={
+          topologyProps?.blastRadius ?? {
+            impactedCameras: 1200,
+            impactedGnbs: 3,
+            impactedCells: 4
+          }
+        }
+        rcaDetails={topologyProps?.rcaDetails}
+      />
+    );
+  }, [surface]);
+
   return (
     <div className="app-shell">
       <header>
         <h1>Agent-First Assurance Demo</h1>
         <span className="badge">Mock EDC Demo</span>
+        <nav className="top-nav" aria-label="Top-level navigation">
+          <button className={activePage === 'dashboard' ? 'active' : ''} onClick={() => setActivePage('dashboard')}>
+            Service Dashboard
+          </button>
+          <button className={activePage === 'kpis' ? 'active' : ''} onClick={() => setActivePage('kpis')}>
+            KPI List
+          </button>
+          <button className={activePage === 'topology' ? 'active' : ''} onClick={() => setActivePage('topology')}>
+            Topology View
+          </button>
+        </nav>
         <select value={appState.service?.id}>
           <option value="enterprise-surveillance-slice">Enterprise Surveillance Slice</option>
         </select>
       </header>
-      <main>
-        <section className="panel work-panel">{renderedSurface}</section>
+      {activePage === 'dashboard' ? (
+        <main>
+          <section className="panel work-panel">{renderedSurface}</section>
 
-        <aside className="panel timeline-panel">
-          <h2>Chat / Agent Timeline</h2>
-          <div className="timeline-scroll" ref={timelineScrollRef}>
-            {timeline.map((item, idx) => (
-              <div className={`timeline-item ${item.kind}`} key={`${item.kind}-${idx}`}>
-                <p>{item.text}</p>
-                {item.badge ? <small>{item.badge}</small> : null}
-              </div>
-            ))}
-          </div>
-          <div className="timeline-actions">
-            <h4>Recommended actions</h4>
-            <div className="actions">
-              {suggestedActions.map((action) => (
-                <button key={action} onClick={() => sendAction(action)}>
-                  {labels[action]}
-                </button>
+          <aside className="panel timeline-panel">
+            <h2>Chat / Agent Timeline</h2>
+            <div className="timeline-scroll" ref={timelineScrollRef}>
+              {timeline.map((item, idx) => (
+                <div className={`timeline-item ${item.kind}`} key={`${item.kind}-${idx}`}>
+                  <p>{item.text}</p>
+                  {item.badge ? <small>{item.badge}</small> : null}
+                </div>
               ))}
-              {suggestedActions.length === 0 ? <p className="empty-actions">Waiting for the agent to suggest actions...</p> : null}
             </div>
-          </div>
-        </aside>
-      </main>
+            <div className="timeline-actions">
+              <h4>Recommended actions</h4>
+              <div className="actions">
+                {suggestedActions.map((action) => (
+                  <button key={action} onClick={() => sendAction(action)}>
+                    {labels[action]}
+                  </button>
+                ))}
+                {suggestedActions.length === 0 ? <p className="empty-actions">Waiting for the agent to suggest actions...</p> : null}
+              </div>
+            </div>
+          </aside>
+        </main>
+      ) : (
+        <main className="single-page-main">
+          <section className="panel work-panel">{activePage === 'kpis' ? renderedKpiPage : renderedTopologyPage}</section>
+        </main>
+      )}
     </div>
   );
 }
-
 
