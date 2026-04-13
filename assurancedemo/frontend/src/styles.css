@@ -86,6 +86,7 @@ main { flex: 1; display: grid; grid-template-columns: 1.7fr 1fr; gap: 14px; padd
 .improved-kpi-strip p { margin: 0; font-size: 12px; color: #a9c0e4; }
 .improved-kpi-strip span { border: 1px solid #28785d; background: rgba(28, 93, 70, 0.4); border-radius: 999px; padding: 4px 10px; font-size: 12px; color: #bef5dd; }
 .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.empty-actions { grid-column: 1 / -1; margin: 0; font-size: 12px; color: #84a4cc; }
 button { padding: 9px 10px; background: #285fa8; color: #fff; border: 0; border-radius: 8px; cursor: pointer; }
 button:disabled { opacity: 0.4; cursor: not-allowed; }
 .empty-surface { border: 1px dashed #3d6094; border-radius: 10px; padding: 26px; color: #89a6cc; }

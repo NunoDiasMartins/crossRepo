@@ -2,7 +2,7 @@ import cors from 'cors';
 import express from 'express';
 import { baseState, surfaces } from './data/mockData.js';
 
-type DemoAction = 'VIEW_IMPACT' | 'ANALYZE_KPIS' | 'SHOW_RCA' | 'APPLY_FIX' | 'RESET_DEMO';
+type DemoAction = 'VIEW_IMPACT' | 'ANALYZE_KPIS' | 'SHOW_RCA' | 'APPLY_FIX';
 
 type DemoEvent = {
   type:
@@ -37,12 +37,20 @@ app.use(express.json());
 const sessions = new Map<string, Session>();
 const clients = new Map<string, express.Response[]>();
 
-const ACTION_SUGGESTIONS: Record<DemoAction, DemoAction[]> = {
-  VIEW_IMPACT: ['ANALYZE_KPIS', 'SHOW_RCA', 'APPLY_FIX', 'RESET_DEMO'],
-  ANALYZE_KPIS: ['SHOW_RCA', 'APPLY_FIX', 'RESET_DEMO'],
-  SHOW_RCA: ['APPLY_FIX', 'RESET_DEMO'],
-  APPLY_FIX: ['RESET_DEMO'],
-  RESET_DEMO: ['VIEW_IMPACT', 'ANALYZE_KPIS', 'SHOW_RCA', 'APPLY_FIX', 'RESET_DEMO']
+const RECOMMENDATION_FLOW: Record<'INITIAL' | DemoAction, DemoAction[]> = {
+  INITIAL: ['VIEW_IMPACT'],
+  VIEW_IMPACT: ['ANALYZE_KPIS'],
+  ANALYZE_KPIS: ['SHOW_RCA'],
+  SHOW_RCA: ['APPLY_FIX'],
+  APPLY_FIX: ['ANALYZE_KPIS']
+};
+
+const EXTRA_ACTION_POOLS: Record<'INITIAL' | DemoAction, DemoAction[]> = {
+  INITIAL: ['ANALYZE_KPIS', 'SHOW_RCA'],
+  VIEW_IMPACT: ['SHOW_RCA', 'APPLY_FIX'],
+  ANALYZE_KPIS: ['VIEW_IMPACT', 'APPLY_FIX'],
+  SHOW_RCA: ['VIEW_IMPACT', 'ANALYZE_KPIS'],
+  APPLY_FIX: ['VIEW_IMPACT', 'SHOW_RCA']
 };
 
 function sleep(ms: number): Promise<void> {
@@ -80,6 +88,23 @@ function buildCapabilityLabels(uiCapabilities: string[] = []): string[] {
     ResolutionPanel: 'Resolution Summary Panel'
   };
   return uiCapabilities.map((capability) => mapping[capability] ?? capability);
+}
+
+function chooseRandomActions(actions: DemoAction[]): DemoAction[] {
+  const shuffled = [...actions];
+  for (let idx = shuffled.length - 1; idx > 0; idx -= 1) {
+    const swapWith = Math.floor(Math.random() * (idx + 1));
+    [shuffled[idx], shuffled[swapWith]] = [shuffled[swapWith], shuffled[idx]];
+  }
+  const maxCount = Math.min(2, shuffled.length);
+  const count = Math.min(shuffled.length, Math.max(1, Math.floor(Math.random() * maxCount) + 1));
+  return shuffled.slice(0, count);
+}
+
+function buildSuggestedActions(stage: 'INITIAL' | DemoAction): DemoAction[] {
+  const primary = RECOMMENDATION_FLOW[stage];
+  const extras = chooseRandomActions(EXTRA_ACTION_POOLS[stage]);
+  return Array.from(new Set([...primary, ...extras]));
 }
 
 async function scriptedInitialEvents(sessionId: string): Promise<void> {
@@ -130,18 +155,12 @@ async function scriptedInitialEvents(sessionId: string): Promise<void> {
   queueEvent(sessionId, {
     type: 'ui.action.suggested',
     payload: {
-      actions: ['VIEW_IMPACT', 'ANALYZE_KPIS', 'SHOW_RCA', 'APPLY_FIX', 'RESET_DEMO']
+      actions: buildSuggestedActions('INITIAL')
     }
   });
 }
 
 async function handleAction(sessionId: string, action: DemoAction): Promise<void> {
-  if (action === 'RESET_DEMO') {
-    sessions.set(sessionId, { id: sessionId, step: 0, queue: [], context: sessions.get(sessionId)?.context, uiCapabilities: sessions.get(sessionId)?.uiCapabilities });
-    await scriptedInitialEvents(sessionId);
-    return;
-  }
-
   if (action === 'VIEW_IMPACT') {
     queueEvent(sessionId, {
       type: 'agent.message.delta',
@@ -249,7 +268,7 @@ async function handleAction(sessionId: string, action: DemoAction): Promise<void
   queueEvent(sessionId, {
     type: 'ui.action.suggested',
     payload: {
-      actions: ACTION_SUGGESTIONS[action]
+      actions: buildSuggestedActions(action)
     }
   });
 }

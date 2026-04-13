@@ -5,7 +5,7 @@ export type SurfaceName =
   | 'root-cause-analysis'
   | 'resolution-summary';
 
-export type ActionType = 'VIEW_IMPACT' | 'ANALYZE_KPIS' | 'SHOW_RCA' | 'APPLY_FIX' | 'RESET_DEMO';
+export type ActionType = 'VIEW_IMPACT' | 'ANALYZE_KPIS' | 'SHOW_RCA' | 'APPLY_FIX';
 
 export type SurfaceSchema = {
   surface: SurfaceName;

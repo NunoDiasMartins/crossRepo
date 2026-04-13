@@ -6,13 +6,11 @@ import { TopologyView } from './components/TopologyView';
 import type { ActionType, AppState, SurfaceSchema, TimelineItem } from './types';
 import './styles.css';
 
-const ACTIONS: ActionType[] = ['VIEW_IMPACT', 'ANALYZE_KPIS', 'SHOW_RCA', 'APPLY_FIX', 'RESET_DEMO'];
 const labels: Record<ActionType, string> = {
   VIEW_IMPACT: 'View Impact',
   ANALYZE_KPIS: 'Analyze KPIs',
   SHOW_RCA: 'Show RCA',
   APPLY_FIX: 'Apply Fix',
-  RESET_DEMO: 'Reset Demo'
 };
 
 const capabilityAnnouncement = [
@@ -30,7 +28,7 @@ export default function App() {
   const [appState, setAppState] = useState<AppState>({});
   const [surface, setSurface] = useState<SurfaceSchema | null>(null);
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
-  const [suggestedActions, setSuggestedActions] = useState<ActionType[]>(ACTIONS);
+  const [suggestedActions, setSuggestedActions] = useState<ActionType[]>([]);
 
   useEffect(() => {
     async function start() {
@@ -62,7 +60,9 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!appState.entities || !appState.alarms) return;
+    const entities = appState.entities;
+    const alarms = appState.alarms;
+    if (!entities || !alarms) return;
     setTimeline((prev) => {
       const hasContextCard = prev.some((item) => item.badge === 'Visible context');
       if (hasContextCard) return prev;
@@ -70,7 +70,7 @@ export default function App() {
         ...prev,
         {
           kind: 'event',
-          text: `Context loaded: Slice ${appState.entities.slice} in ${appState.entities.region}. Active alarm ${appState.alarms[0]?.id}.`,
+          text: `Context loaded: Slice ${entities.slice} in ${entities.region}. Active alarm ${alarms[0]?.id}.`,
           badge: 'Visible context'
         }
       ];
@@ -219,11 +219,12 @@ export default function App() {
           <div className="timeline-actions">
             <h4>Recommended actions</h4>
             <div className="actions">
-              {ACTIONS.map((action) => (
-                <button key={action} disabled={!suggestedActions.includes(action)} onClick={() => sendAction(action)}>
+              {suggestedActions.map((action) => (
+                <button key={action} onClick={() => sendAction(action)}>
                   {labels[action]}
                 </button>
               ))}
+              {suggestedActions.length === 0 ? <p className="empty-actions">Waiting for the agent to suggest actions...</p> : null}
             </div>
           </div>
         </aside>
