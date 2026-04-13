@@ -122,11 +122,12 @@ npm run dev:frontend
 ## Live demo script
 
 1. Start on **Service Overview** and narrate initial incident detection.
-2. Click **View Impact** to show blast radius on topology.
-3. Click **Analyze KPIs** to present correlated anomalies.
-4. Click **Show RCA** to show transport congestion root cause.
-5. Click **Apply Fix** to simulate reroute and KPI recovery.
-6. End on **Resolution Summary** (before/after KPI comparison + recovered endpoints).
+2. Use whichever action the agent recommends first (typically **View Impact**), and mention that one or two additional context-aware options are generated each step.
+3. Move through the investigation path (**Analyze KPIs** then **Show RCA**) while calling out how recommended actions adapt after every response.
+4. Trigger **Apply Fix** once remediation is recommended.
+5. End on **Resolution Summary** and optionally follow one of the newly suggested follow-up actions to validate recovery from a different view.
+
+> Presenter note: the old **Reset Demo** control has been removed. Restart by refreshing the app (or starting a new session) when you want to replay from step one.
 
 ## Non-goals
 
