@@ -76,12 +76,28 @@ function MetricLineChart({
   );
 }
 
-export function KpiCorrelationPanel({ title, series, insight, timestamps = [] }: { title: string; series: KpiSeries; insight: string; timestamps?: string[] }) {
+export function KpiCorrelationPanel({
+  title,
+  series,
+  insight,
+  timestamps = [],
+  metricKeys
+}: {
+  title: string;
+  series: KpiSeries;
+  insight: string;
+  timestamps?: string[];
+  metricKeys?: string[];
+}) {
+  const visibleKpis = metricKeys?.length
+    ? KPI_METADATA.filter((kpi) => metricKeys.includes(kpi.key))
+    : KPI_METADATA;
+
   return (
     <section className="surface-card">
       <h2>{title}</h2>
       <div className="kpi-grid">
-        {KPI_METADATA.map((kpi) => (
+        {visibleKpis.map((kpi) => (
           <MetricLineChart
             key={kpi.key}
             label={kpi.label}

@@ -129,6 +129,15 @@ npm run dev:frontend
 
 > Presenter note: the old **Reset Demo** control has been removed. Restart by refreshing the app (or starting a new session) when you want to replay from step one.
 
+## Mixed-component query examples
+
+The operator input supports composed queries that can request more than one component at once.
+
+- "show me the RCA with the KPIs ( drop rate, packet loss)"
+- "show me the Impact Topology with the KPI ( packet loss )"
+- "display the Impact Topology and include the KPI ( packet loss )"
+- "I want the Impact Topology together with the KPI ( packet loss )"
+
 ## Non-goals
 
 - No real telco integrations
