@@ -49,6 +49,15 @@ const DEFAULT_KPI_SERIES = {
 
 type KpiSeriesKey = keyof typeof DEFAULT_KPI_SERIES;
 
+function resolvePageFromLocation(): TopLevelPage {
+  if (typeof window === 'undefined') return 'dashboard';
+  const params = new URLSearchParams(window.location.search);
+  const view = params.get('view');
+  if (view === 'kpis') return 'kpis';
+  if (view === 'topology') return 'topology';
+  return 'dashboard';
+}
+
 const DEFAULT_TOPOLOGY_NODES = [
   { id: 'transport-link-a', label: 'transport-link-a', type: 'transport', impacted: true },
   { id: 'gnb-101', label: 'gnb-101', type: 'gnb', impacted: true },
@@ -74,7 +83,7 @@ export default function App() {
   const [sessionId, setSessionId] = useState('');
   const [appState, setAppState] = useState<AppState>({});
   const [surface, setSurface] = useState<SurfaceSchema | null>(null);
-  const [activePage, setActivePage] = useState<TopLevelPage>('dashboard');
+  const [activePage, setActivePage] = useState<TopLevelPage>(resolvePageFromLocation);
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [suggestedActions, setSuggestedActions] = useState<ActionType[]>([]);
   const [operatorInput, setOperatorInput] = useState('');
@@ -200,6 +209,17 @@ export default function App() {
     if (!container) return;
     container.scrollTop = container.scrollHeight;
   }, [timeline]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    if (activePage === 'dashboard') {
+      url.searchParams.delete('view');
+    } else {
+      url.searchParams.set('view', activePage);
+    }
+    window.history.replaceState(null, '', `${url.pathname}${url.search}`);
+  }, [activePage]);
 
   async function sendAction(action: ActionType) {
     if (!sessionId) return;

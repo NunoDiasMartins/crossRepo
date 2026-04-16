@@ -9,6 +9,9 @@ type ChatItem = {
   linkHref?: string;
 };
 
+const KPI_PAGE_URL = '/?view=kpis';
+const TOPOLOGY_PAGE_URL = '/?view=topology';
+
 function buildReply(input: string): Omit<ChatItem, 'id'> {
   const normalized = input.trim().toLowerCase();
 
@@ -17,7 +20,7 @@ function buildReply(input: string): Omit<ChatItem, 'id'> {
       sender: 'bot',
       text: 'For KPI analysis, open the KPI List page.',
       linkLabel: 'Go to KPI List',
-      linkHref: '#kpi-list'
+      linkHref: KPI_PAGE_URL
     };
   }
 
@@ -26,7 +29,7 @@ function buildReply(input: string): Omit<ChatItem, 'id'> {
       sender: 'bot',
       text: 'For topology analysis, open the Topology View page.',
       linkLabel: 'Go to Topology View',
-      linkHref: '#topology-view'
+      linkHref: TOPOLOGY_PAGE_URL
     };
   }
 
@@ -73,33 +76,51 @@ export default function LegacyChatbotApp() {
     <div className="legacy-shell">
       <header className="legacy-header">
         <div>
-          <h1>Assurance Demo — Legacy Chatbot</h1>
-          <p>Old chatbot behavior: static routing only (no AG-UI / A2UI).</p>
+          <h1>Agent-First Assurance Demo</h1>
+          <p>Legacy chatbot mode with the same landing layout and dedicated KPI / topology pages.</p>
         </div>
         <span className="legacy-badge">Legacy Mode</span>
       </header>
 
+      <nav className="legacy-top-nav" aria-label="Legacy sections">
+        <a className="legacy-top-nav-item active" href="/legacy-chatbot.html">
+          Service Dashboard
+        </a>
+        <a className="legacy-top-nav-item" href={KPI_PAGE_URL} target="_blank" rel="noopener noreferrer">
+          KPI List
+        </a>
+        <a className="legacy-top-nav-item" href={TOPOLOGY_PAGE_URL} target="_blank" rel="noopener noreferrer">
+          Topology View
+        </a>
+      </nav>
+
       <main className="legacy-main">
         <section className="legacy-panel legacy-work-panel">
-          <h2>Legacy Assistant</h2>
+          <h2>Service Assurance Dashboard</h2>
           <p>
-            This page mocks the old approach. It does not compose UI surfaces.
-            It only returns links for KPI List or Topology View.
+            This legacy page now mirrors the demo landing experience. Use the links below (or ask in chat) to open KPI
+            and topology pages in new tabs.
           </p>
+          <div className="legacy-catalog">
+            <article className="legacy-card">
+              <h3>KPI List</h3>
+              <p>Open the full KPI page in a separate tab.</p>
+              <a href={KPI_PAGE_URL} target="_blank" rel="noopener noreferrer">
+                Open KPI List
+              </a>
+            </article>
+            <article className="legacy-card">
+              <h3>Topology View</h3>
+              <p>Open the full topology page in a separate tab.</p>
+              <a href={TOPOLOGY_PAGE_URL} target="_blank" rel="noopener noreferrer">
+                Open Topology View
+              </a>
+            </article>
+          </div>
           <ul>
             <li>Try: “KPI analysis”</li>
             <li>Try: “Show topology”</li>
           </ul>
-          <div className="legacy-catalog">
-            <article id="kpi-list" className="legacy-card">
-              <h3>KPI List</h3>
-              <p>Static legacy destination. In old mode, chatbot sends users here for KPI analysis.</p>
-            </article>
-            <article id="topology-view" className="legacy-card">
-              <h3>Topology View</h3>
-              <p>Static legacy destination. In old mode, chatbot sends users here for topology requests.</p>
-            </article>
-          </div>
         </section>
 
         <aside className="legacy-panel legacy-chat-panel">
@@ -109,7 +130,9 @@ export default function LegacyChatbotApp() {
               <div key={item.id} className={`legacy-msg ${item.sender}`}>
                 <p>{item.text}</p>
                 {item.linkHref && item.linkLabel ? (
-                  <a href={item.linkHref}>{item.linkLabel}</a>
+                  <a href={item.linkHref} target="_blank" rel="noopener noreferrer">
+                    {item.linkLabel}
+                  </a>
                 ) : null}
               </div>
             ))}
