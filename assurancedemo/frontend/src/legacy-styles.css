@@ -1,0 +1,144 @@
+:root {
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color: #e5ecff;
+  background: #0f162a;
+}
+
+body {
+  margin: 0;
+  background: #0b1120;
+}
+
+.legacy-shell {
+  min-height: 100vh;
+  padding: 1rem 1.5rem 1.5rem;
+}
+
+.legacy-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.legacy-header h1 {
+  margin: 0;
+}
+
+.legacy-header p {
+  margin: 0.3rem 0 0;
+  color: #b9c5f2;
+}
+
+.legacy-badge {
+  background: #26385f;
+  color: #c8d8ff;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+}
+
+.legacy-main {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+}
+
+.legacy-panel {
+  background: #121b30;
+  border: 1px solid #24355e;
+  border-radius: 14px;
+  padding: 1rem;
+}
+
+.legacy-work-panel ul {
+  margin-top: 0.75rem;
+}
+
+.legacy-catalog {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.legacy-card {
+  background: #0d1730;
+  border: 1px solid #274271;
+  border-radius: 10px;
+  padding: 0.75rem;
+}
+
+.legacy-card h3 {
+  margin: 0 0 0.35rem;
+}
+
+.legacy-chat-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 70vh;
+}
+
+.legacy-chat-panel h2 {
+  margin-top: 0;
+}
+
+.legacy-timeline {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.legacy-msg {
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #2b406f;
+  background: #152240;
+}
+
+.legacy-msg.user {
+  background: #25396b;
+}
+
+.legacy-msg p {
+  margin: 0;
+}
+
+.legacy-msg a {
+  display: inline-block;
+  margin-top: 0.35rem;
+  color: #9ec5ff;
+}
+
+.legacy-input-form {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.legacy-input-form textarea {
+  resize: vertical;
+  min-height: 64px;
+  border-radius: 10px;
+  border: 1px solid #3c578f;
+  background: #0f1a34;
+  color: #ebf1ff;
+  padding: 0.55rem;
+}
+
+.legacy-input-form button {
+  align-self: flex-end;
+  border: none;
+  border-radius: 8px;
+  background: #4f7fe6;
+  color: #fff;
+  padding: 0.4rem 0.85rem;
+  cursor: pointer;
+}
+
+.legacy-input-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

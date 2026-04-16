@@ -4,6 +4,8 @@ A conference-friendly mock demo that contrasts:
 1. **Traditional chatbot bolted onto UI** (left timeline only), and
 2. **Agent-first UI** where the backend runtime **actively composes surfaces** in the center panel.
 
+The frontend now also includes a dedicated **Legacy Chatbot page** (separate route) to demo the older static-chatbot behavior without changing the current agent-first experience.
+
 The story simulates a 5G **Enterprise Surveillance Slice** incident, progressing from detection to impact, KPI correlation, RCA, remediation, and recovery.
 
 ## What is AG-UI vs A2UI in this demo?
@@ -112,6 +114,7 @@ npm run dev
 
 - Frontend: `http://localhost:5174`
 - Backend: `http://localhost:8787`
+- Legacy chatbot page: `http://localhost:5174/legacy-chatbot.html`
 
 Or run each side separately:
 
@@ -121,6 +124,16 @@ npm run dev:frontend
 ```
 
 ## Live demo script
+
+### Legacy-vs-agent comparison flow
+
+1. Open `http://localhost:5174/legacy-chatbot.html` and ask for:
+   - “KPI analysis” → chatbot returns a link to **KPI List**
+   - “Topology” → chatbot returns a link to **Topology View**
+2. Call out that this old mode is static routing only (no AG-UI/A2UI dynamic composition).
+3. Then switch to `http://localhost:5174` and run the full agent-first walkthrough below.
+
+### Agent-first walkthrough
 
 1. Start on **Service Overview** and narrate initial incident detection.
 2. Use whichever action the agent recommends first (typically **View Impact**), and mention that one or two additional context-aware options are generated each step.
