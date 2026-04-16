@@ -29,6 +29,13 @@ type SessionStartResponse = {
   initialState: AppState;
 };
 
+function getInitialPage(): TopLevelPage {
+  if (typeof window === 'undefined') return 'dashboard';
+  const page = new URLSearchParams(window.location.search).get('page');
+  if (page === 'kpis' || page === 'topology' || page === 'dashboard') return page;
+  return 'dashboard';
+}
+
 let sessionStartPromise: Promise<SessionStartResponse> | null = null;
 let hasLoggedCapabilityAnnouncement = false;
 
@@ -74,7 +81,7 @@ export default function App() {
   const [sessionId, setSessionId] = useState('');
   const [appState, setAppState] = useState<AppState>({});
   const [surface, setSurface] = useState<SurfaceSchema | null>(null);
-  const [activePage, setActivePage] = useState<TopLevelPage>('dashboard');
+  const [activePage, setActivePage] = useState<TopLevelPage>(getInitialPage);
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [suggestedActions, setSuggestedActions] = useState<ActionType[]>([]);
   const [operatorInput, setOperatorInput] = useState('');

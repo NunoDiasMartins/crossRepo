@@ -17,7 +17,7 @@ function buildReply(input: string): Omit<ChatItem, 'id'> {
       sender: 'bot',
       text: 'For KPI analysis, open the KPI List page.',
       linkLabel: 'Go to KPI List',
-      linkHref: '#kpi-list'
+      linkHref: '/?page=kpis'
     };
   }
 
@@ -26,7 +26,7 @@ function buildReply(input: string): Omit<ChatItem, 'id'> {
       sender: 'bot',
       text: 'For topology analysis, open the Topology View page.',
       linkLabel: 'Go to Topology View',
-      linkHref: '#topology-view'
+      linkHref: '/?page=topology'
     };
   }
 
@@ -81,23 +81,85 @@ export default function LegacyChatbotApp() {
 
       <main className="legacy-main">
         <section className="legacy-panel legacy-work-panel">
-          <h2>Legacy Assistant</h2>
-          <p>
-            This page mocks the old approach. It does not compose UI surfaces.
-            It only returns links for KPI List or Topology View.
-          </p>
-          <ul>
-            <li>Try: “KPI analysis”</li>
-            <li>Try: “Show topology”</li>
-          </ul>
+          <h2>Service Assurance Dashboard</h2>
+          <p>Enterprise Surveillance Slice</p>
+
+          <div className="legacy-metrics-grid">
+            <article className="legacy-metric">
+              <span>SLA compliance</span>
+              <strong>97.8%</strong>
+            </article>
+            <article className="legacy-metric">
+              <span>Latency P95</span>
+              <strong>148 ms</strong>
+            </article>
+            <article className="legacy-metric">
+              <span>Active alarms</span>
+              <strong>3</strong>
+            </article>
+            <article className="legacy-metric">
+              <span>Impacted endpoints</span>
+              <strong>1200</strong>
+            </article>
+            <article className="legacy-metric">
+              <span>Service availability</span>
+              <strong>99.71%</strong>
+            </article>
+            <article className="legacy-metric">
+              <span>Major incidents (24h)</span>
+              <strong>2</strong>
+            </article>
+            <article className="legacy-metric">
+              <span>MTTR</span>
+              <strong>24 min</strong>
+            </article>
+            <article className="legacy-metric">
+              <span>SLA breach risk</span>
+              <strong>1</strong>
+            </article>
+          </div>
+
+          <div className="legacy-chart-grid">
+            <article className="legacy-chart-card">
+              <div className="legacy-chart-header">
+                <h3>Availability</h3>
+                <strong>99.71%</strong>
+              </div>
+              <div className="legacy-chart-line legacy-chart-down" />
+            </article>
+            <article className="legacy-chart-card">
+              <div className="legacy-chart-header">
+                <h3>Latency (P95)</h3>
+                <strong>148 ms</strong>
+              </div>
+              <div className="legacy-chart-line legacy-chart-up" />
+            </article>
+            <article className="legacy-chart-card">
+              <div className="legacy-chart-header">
+                <h3>Error rate</h3>
+                <strong>2.2%</strong>
+              </div>
+              <div className="legacy-chart-line legacy-chart-up-soft" />
+            </article>
+            <article className="legacy-chart-card">
+              <div className="legacy-chart-header">
+                <h3>Throughput</h3>
+                <strong>309 Mbps</strong>
+              </div>
+              <div className="legacy-chart-line legacy-chart-down-hard" />
+            </article>
+          </div>
+
           <div className="legacy-catalog">
             <article id="kpi-list" className="legacy-card">
               <h3>KPI List</h3>
-              <p>Static legacy destination. In old mode, chatbot sends users here for KPI analysis.</p>
+              <p>Legacy destination for KPI analysis requests.</p>
+              <a href="/?page=kpis">Open KPI List page</a>
             </article>
             <article id="topology-view" className="legacy-card">
               <h3>Topology View</h3>
-              <p>Static legacy destination. In old mode, chatbot sends users here for topology requests.</p>
+              <p>Legacy destination for topology requests.</p>
+              <a href="/?page=topology">Open Topology View page</a>
             </article>
           </div>
         </section>

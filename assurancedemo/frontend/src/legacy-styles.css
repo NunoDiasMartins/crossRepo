@@ -55,6 +55,96 @@ body {
   margin-top: 0.75rem;
 }
 
+.legacy-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-top: 0.8rem;
+}
+
+.legacy-metric {
+  background: #102246;
+  border: 1px solid #2a4c83;
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.legacy-metric span {
+  color: #9bb9ef;
+  font-size: 0.9rem;
+}
+
+.legacy-metric strong {
+  font-size: 1.9rem;
+  line-height: 1;
+  color: #e6efff;
+}
+
+.legacy-chart-grid {
+  margin-top: 0.9rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.legacy-chart-card {
+  background: #0b1b3a;
+  border: 1px solid #2a4c83;
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+}
+
+.legacy-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.45rem;
+}
+
+.legacy-chart-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.legacy-chart-line {
+  height: 84px;
+  border-radius: 8px;
+  border: 1px solid #24426f;
+  background: linear-gradient(rgba(96, 153, 255, 0.14), rgba(96, 153, 255, 0.01));
+  position: relative;
+  overflow: hidden;
+}
+
+.legacy-chart-line::after {
+  content: '';
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 44%;
+  height: 3px;
+  border-radius: 999px;
+  background: #7ed0ff;
+}
+
+.legacy-chart-up::after {
+  transform: rotate(-11deg);
+}
+
+.legacy-chart-down::after {
+  transform: rotate(7deg);
+}
+
+.legacy-chart-up-soft::after {
+  transform: rotate(-6deg);
+}
+
+.legacy-chart-down-hard::after {
+  transform: rotate(13deg);
+}
+
 .legacy-catalog {
   margin-top: 1rem;
   display: grid;
@@ -70,6 +160,12 @@ body {
 
 .legacy-card h3 {
   margin: 0 0 0.35rem;
+}
+
+.legacy-card a {
+  display: inline-block;
+  margin-top: 0.45rem;
+  color: #9ec5ff;
 }
 
 .legacy-chat-panel {
@@ -141,4 +237,17 @@ body {
 .legacy-input-form button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+@media (max-width: 1100px) {
+  .legacy-main {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .legacy-metrics-grid,
+  .legacy-chart-grid {
+    grid-template-columns: 1fr;
+  }
 }
