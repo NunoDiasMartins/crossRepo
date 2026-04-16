@@ -3,6 +3,18 @@ import express from 'express';
 import { baseState, surfaces } from './data/mockData.js';
 
 type DemoAction = 'VIEW_IMPACT' | 'ANALYZE_KPIS' | 'SHOW_RCA' | 'APPLY_FIX';
+type ComposedView = 'topology' | 'rca' | 'kpis' | 'resolution';
+type KpiSeriesKey =
+  | 'serviceAvailability'
+  | 'latencyP95'
+  | 'throughputDlUl'
+  | 'sessionSuccessRate'
+  | 'dropRate'
+  | 'prbUtilization'
+  | 'handoverSuccessRate'
+  | 'sliceSlaCompliance'
+  | 'packetLoss'
+  | 'alarmCorrelationCount';
 
 type DemoEvent = {
   type:
@@ -105,6 +117,130 @@ function buildSuggestedActions(stage: 'INITIAL' | DemoAction): DemoAction[] {
   const primary = RECOMMENDATION_FLOW[stage];
   const extras = chooseRandomActions(EXTRA_ACTION_POOLS[stage]);
   return Array.from(new Set([...primary, ...extras]));
+}
+
+const actionLabels: Record<DemoAction, string> = {
+  VIEW_IMPACT: 'view impact',
+  ANALYZE_KPIS: 'analyze kpis',
+  SHOW_RCA: 'show rca',
+  APPLY_FIX: 'apply fix'
+};
+
+const KPI_ALIASES: Record<string, KpiSeriesKey> = {
+  'drop rate': 'dropRate',
+  droprate: 'dropRate',
+  'packet loss': 'packetLoss',
+  packetloss: 'packetLoss',
+  latency: 'latencyP95',
+  jitter: 'latencyP95',
+  throughput: 'throughputDlUl',
+  'retransmission rate': 'alarmCorrelationCount',
+  'call setup success rate': 'sessionSuccessRate',
+  'handover failure rate': 'handoverSuccessRate'
+};
+
+function resolveActionFromText(input: string): DemoAction | null {
+  const normalized = input.trim().toLowerCase();
+  if (!normalized) return null;
+
+  const directMatch = (Object.entries(actionLabels) as [DemoAction, string][])
+    .find(([, label]) => label === normalized)?.[0];
+
+  return directMatch ?? null;
+}
+
+function parseComposedViews(input: string): { views: ComposedView[]; kpiKeys: KpiSeriesKey[] } | null {
+  const normalized = input.trim().toLowerCase();
+  if (!normalized) return null;
+
+  const views: ComposedView[] = [];
+  const mentionsRca = normalized.includes('rca') || normalized.includes('root cause');
+  const mentionsTopology = normalized.includes('impact topology') || (normalized.includes('topology') && normalized.includes('impact'));
+  const mentionsKpi = normalized.includes('kpi');
+  const mentionsResolution = normalized.includes('resolution summary');
+
+  if (mentionsTopology) views.push('topology');
+  if (mentionsRca) views.push('rca');
+  if (mentionsKpi) views.push('kpis');
+  if (mentionsResolution) views.push('resolution');
+
+  if (views.length < 2) return null;
+
+  const matchedKpis = Object.entries(KPI_ALIASES)
+    .filter(([alias]) => normalized.includes(alias))
+    .map(([, key]) => key);
+
+  return {
+    views,
+    kpiKeys: Array.from(new Set(matchedKpis))
+  };
+}
+
+function buildComposedSurfacePayload(views: ComposedView[], kpiKeys: KpiSeriesKey[]) {
+  const composedSurfaces: Array<{ title: string; component: string; props: Record<string, unknown> }> = [];
+
+  if (views.includes('resolution')) {
+    composedSurfaces.push({
+      title: surfaces.resolution.title,
+      component: surfaces.resolution.component,
+      props: surfaces.resolution.props
+    });
+  }
+
+  if (views.includes('topology')) {
+    composedSurfaces.push({
+      title: surfaces.impactTopology.title,
+      component: surfaces.impactTopology.component,
+      props: surfaces.impactTopology.props
+    });
+  }
+
+  if (views.includes('rca')) {
+    composedSurfaces.push({
+      title: 'Root Cause Analysis',
+      component: 'RcaPanel',
+      props: {
+        confidence: 0.92,
+        rootCause: 'Transport congestion on transport-link-a',
+        tree: {
+          node: 'transport-link-a congestion',
+          children: [
+            {
+              node: 'Queue depth saturation',
+              children: [{ node: 'Burst traffic from surveillance uplink' }, { node: 'Shaping policy threshold exceeded' }]
+            },
+            {
+              node: 'Impacted downstream elements',
+              children: [{ node: 'gnb-101' }, { node: 'gnb-102' }, { node: 'gnb-103' }]
+            }
+          ]
+        },
+        propagation:
+          'Congestion propagates across the west-metro path, increasing packet handling delays in impacted gNB clusters.'
+      }
+    });
+  }
+
+  if (views.includes('kpis')) {
+    composedSurfaces.push({
+      title: kpiKeys.length ? 'Requested KPI Correlation' : surfaces.kpiCorrelation.title,
+      component: surfaces.kpiCorrelation.component,
+      props: {
+        ...surfaces.kpiCorrelation.props,
+        insight: 'Requested KPIs are rendered with RCA/topology to support side-by-side triage.',
+        metricKeys: kpiKeys
+      }
+    });
+  }
+
+  return {
+    schema: 'A2UI-style UI schema v0.1',
+    surface: 'composed-stack',
+    title: 'Composed Investigation View',
+    component: 'ComposedSurfaceStack',
+    props: { composedSurfaces },
+    badge: 'Surface composed'
+  };
 }
 
 async function scriptedInitialEvents(sessionId: string): Promise<void> {
@@ -330,6 +466,94 @@ app.post('/api/action', (req, res) => {
 
   void handleAction(sessionId, action);
   res.json({ ok: true });
+});
+
+app.post('/api/operator-input', (req, res) => {
+  const { sessionId, input, stateSnapshot, visibleContext } = req.body as {
+    sessionId?: string;
+    input?: string;
+    stateSnapshot?: Record<string, unknown>;
+    visibleContext?: Record<string, unknown>;
+  };
+
+  if (!sessionId || !sessions.has(sessionId) || !input?.trim()) {
+    res.status(400).json({ error: 'Invalid session or operator input' });
+    return;
+  }
+
+  const normalizedInput = input.trim().toLowerCase();
+  const session = sessions.get(sessionId);
+  const isResolutionVisible = stateSnapshot?.currentSurface === 'resolution-summary';
+  const shouldAppendTopologyToResolution =
+    isResolutionVisible &&
+    normalizedInput.includes('topology') &&
+    (normalizedInput.includes('add') || normalizedInput.includes('include')) &&
+    normalizedInput.includes('view');
+
+  queueEvent(sessionId, {
+    type: 'state.patch',
+    payload: {
+      lastOperatorInput: input,
+      receivedStateSnapshot: stateSnapshot ?? null,
+      receivedVisibleContext: visibleContext ?? null
+    }
+  });
+
+  const matchedAction = resolveActionFromText(input);
+  if (matchedAction) {
+    if (session) {
+      session.step += 1;
+    }
+    void handleAction(sessionId, matchedAction);
+    res.json({ ok: true, routedTo: 'action', action: matchedAction });
+    return;
+  }
+
+  const composedIntent = parseComposedViews(input);
+  if (shouldAppendTopologyToResolution || composedIntent) {
+    const views: ComposedView[] = shouldAppendTopologyToResolution
+      ? ['resolution', 'topology']
+      : composedIntent?.views ?? [];
+    const kpiKeys = shouldAppendTopologyToResolution ? [] : composedIntent?.kpiKeys ?? [];
+    queueEvent(sessionId, {
+      type: 'agent.message.delta',
+      payload: {
+        message: 'Thinking: mapping your free-text request into an AG-UI composed surface...',
+        badge: 'Thinking'
+      }
+    });
+    queueEvent(sessionId, {
+      type: 'ui.surface.replace',
+      payload: buildComposedSurfacePayload(views, kpiKeys)
+    });
+    queueEvent(sessionId, {
+      type: 'agent.message.completed',
+      payload: {
+        message: `Composed view ready: ${views.join(' + ')}${kpiKeys.length ? ` (${kpiKeys.join(', ')})` : ''}.`,
+        badge: 'Agent event'
+      }
+    });
+    queueEvent(sessionId, {
+      type: 'ui.action.suggested',
+      payload: {
+        actions: buildSuggestedActions((session?.step ? 'APPLY_FIX' : 'INITIAL') as 'INITIAL' | DemoAction)
+      }
+    });
+    if (session) {
+      session.step += 1;
+    }
+    res.json({ ok: true, routedTo: 'composed-surface', views, kpiKeys });
+    return;
+  }
+
+  queueEvent(sessionId, {
+    type: 'agent.message.completed',
+    payload: {
+      message: "I logged your note. Ask for an action (View Impact, Analyze KPIs, Show RCA, Apply Fix) or a composed view request.",
+      badge: 'Agent event'
+    }
+  });
+  res.json({ ok: true, routedTo: 'note' });
 });
 
 app.get('/api/health', (_req, res) => {
