@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { KpiCorrelationPanel } from './components/KpiCorrelationPanel';
+import { RcaPanel } from './components/RcaPanel';
 import { ResolutionPanel } from './components/ResolutionPanel';
 import { ServiceOverviewCard } from './components/ServiceOverviewCard';
 import { TopologyView } from './components/TopologyView';
@@ -10,7 +11,7 @@ const labels: Record<ActionType, string> = {
   VIEW_IMPACT: 'View Impact',
   ANALYZE_KPIS: 'Analyze KPIs',
   SHOW_RCA: 'Show RCA',
-  APPLY_FIX: 'Apply Fix',
+  APPLY_FIX: 'Apply Fix'
 };
 
 const capabilityAnnouncement = [
@@ -27,6 +28,8 @@ type SessionStartResponse = {
   sessionId: string;
   initialState: AppState;
 };
+
+type ComposedView = 'topology' | 'rca' | 'kpis';
 
 let sessionStartPromise: Promise<SessionStartResponse> | null = null;
 let hasLoggedCapabilityAnnouncement = false;
@@ -45,6 +48,8 @@ const DEFAULT_KPI_SERIES = {
   packetLoss: [0.1, 0.2, 0.3, 0.8, 1.1, 1.7, 2.2],
   alarmCorrelationCount: [2, 3, 3, 5, 8, 11, 14]
 };
+
+type KpiSeriesKey = keyof typeof DEFAULT_KPI_SERIES;
 
 const DEFAULT_TOPOLOGY_NODES = [
   { id: 'transport-link-a', label: 'transport-link-a', type: 'transport', impacted: true },
@@ -67,6 +72,33 @@ const DEFAULT_TOPOLOGY_EDGES: string[][] = [
   ['gnb-103', 'cell-103-a']
 ];
 
+const DEFAULT_RCA_TREE = {
+  node: 'transport-link-a congestion',
+  children: [
+    {
+      node: 'Queue depth saturation',
+      children: [{ node: 'Burst traffic from surveillance uplink' }, { node: 'Shaping policy threshold exceeded' }]
+    },
+    {
+      node: 'Impacted downstream elements',
+      children: [{ node: 'gnb-101' }, { node: 'gnb-102' }, { node: 'gnb-103' }]
+    }
+  ]
+};
+
+const KPI_ALIASES: Record<string, KpiSeriesKey> = {
+  'drop rate': 'dropRate',
+  droprate: 'dropRate',
+  'packet loss': 'packetLoss',
+  packetloss: 'packetLoss',
+  latency: 'latencyP95',
+  jitter: 'latencyP95',
+  throughput: 'throughputDlUl',
+  'retransmission rate': 'alarmCorrelationCount',
+  'call setup success rate': 'sessionSuccessRate',
+  'handover failure rate': 'handoverSuccessRate'
+};
+
 export default function App() {
   const [sessionId, setSessionId] = useState('');
   const [appState, setAppState] = useState<AppState>({});
@@ -75,6 +107,8 @@ export default function App() {
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [suggestedActions, setSuggestedActions] = useState<ActionType[]>([]);
   const [operatorInput, setOperatorInput] = useState('');
+  const [composedViews, setComposedViews] = useState<ComposedView[]>([]);
+  const [selectedKpiKeys, setSelectedKpiKeys] = useState<KpiSeriesKey[]>([]);
   const timelineScrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -166,6 +200,8 @@ export default function App() {
     source.addEventListener('ui.surface.replace', (evt) => {
       const data = JSON.parse((evt as MessageEvent).data);
       setSurface(data);
+      setComposedViews([]);
+      setSelectedKpiKeys([]);
       setTimeline((prev) => [...prev, { kind: 'event', text: `UI surface updated: ${data.title}`, badge: data.badge || 'UI update' }]);
     });
 
@@ -200,6 +236,8 @@ export default function App() {
 
   async function sendAction(action: ActionType) {
     if (!sessionId) return;
+    setComposedViews([]);
+    setSelectedKpiKeys([]);
     setTimeline((prev) => [...prev, { kind: 'user', text: labels[action], badge: 'Operator action' }]);
     await fetch(`${API}/api/action`, {
       method: 'POST',
@@ -233,6 +271,29 @@ export default function App() {
     return null;
   }
 
+  function parseComposedViews(input: string): { views: ComposedView[]; kpiKeys: KpiSeriesKey[] } | null {
+    const normalized = input.trim().toLowerCase();
+    if (!normalized) return null;
+
+    const views: ComposedView[] = [];
+    const mentionsRca = normalized.includes('rca') || normalized.includes('root cause');
+    const mentionsTopology = normalized.includes('impact topology');
+    const mentionsKpi = normalized.includes('kpi');
+
+    if (mentionsTopology) views.push('topology');
+    if (mentionsRca) views.push('rca');
+    if (mentionsKpi) views.push('kpis');
+
+    if (views.length < 2) return null;
+
+    const matchedKpis = Object.entries(KPI_ALIASES)
+      .filter(([alias]) => normalized.includes(alias))
+      .map(([, key]) => key);
+
+    const uniqueKpis = Array.from(new Set(matchedKpis));
+    return { views, kpiKeys: uniqueKpis };
+  }
+
   async function submitOperatorInput() {
     const trimmedInput = operatorInput.trim();
     if (!trimmedInput) return;
@@ -244,47 +305,133 @@ export default function App() {
       return;
     }
 
+    const composedIntent = parseComposedViews(trimmedInput);
+    if (composedIntent) {
+      setComposedViews(composedIntent.views);
+      setSelectedKpiKeys(composedIntent.kpiKeys);
+      setTimeline((prev) => [
+        ...prev,
+        {
+          kind: 'event',
+          text: `Composed surface request detected: ${composedIntent.views.join(' + ')}${composedIntent.kpiKeys.length ? ` (${composedIntent.kpiKeys.join(', ')})` : ''}`,
+          badge: 'UI compose'
+        }
+      ]);
+    }
+
     setTimeline((prev) => [...prev, { kind: 'user', text: trimmedInput, badge: 'Operator note' }]);
     setOperatorInput('');
   }
 
-  const renderedSurface = useMemo(() => {
-    if (!surface || !appState.service) return <div className="empty-surface">Awaiting agent-composed UI surface...</div>;
-    if (surface.component === 'ServiceOverviewCard') {
+  function renderSurfaceSchema(currentSurface: SurfaceSchema) {
+    if (!appState.service) return null;
+
+    if (currentSurface.component === 'ServiceOverviewCard') {
       return (
         <ServiceOverviewCard
-          title={surface.title}
+          title={currentSurface.title}
           serviceName={appState.service.name}
-          metrics={(surface.props as any).metrics}
-          sparkline={(surface.props as any).sparkline}
-          temporalSeries={(surface.props as any).temporalSeries}
+          metrics={(currentSurface.props as any).metrics}
+          sparkline={(currentSurface.props as any).sparkline}
+          temporalSeries={(currentSurface.props as any).temporalSeries}
         />
       );
     }
-    if (surface.component === 'TopologyView') {
+
+    if (currentSurface.component === 'TopologyView') {
       return (
         <TopologyView
-          title={surface.title}
-          mode={(surface.props as any).mode}
-          nodes={(surface.props as any).nodes}
-          edges={(surface.props as any).edges}
-          blastRadius={(surface.props as any).blastRadius}
-          rcaDetails={(surface.props as any).rcaDetails}
+          title={currentSurface.title}
+          mode={(currentSurface.props as any).mode}
+          nodes={(currentSurface.props as any).nodes}
+          edges={(currentSurface.props as any).edges}
+          blastRadius={(currentSurface.props as any).blastRadius}
+          rcaDetails={(currentSurface.props as any).rcaDetails}
         />
       );
     }
-    if (surface.component === 'KpiCorrelationPanel') {
+
+    if (currentSurface.component === 'KpiCorrelationPanel') {
       return (
         <KpiCorrelationPanel
-          title={surface.title}
-          series={(surface.props as any).series}
-          insight={(surface.props as any).insight}
-          timestamps={(surface.props as any).timestamps}
+          title={currentSurface.title}
+          series={(currentSurface.props as any).series}
+          insight={(currentSurface.props as any).insight}
+          timestamps={(currentSurface.props as any).timestamps}
         />
       );
     }
-    return <ResolutionPanel title={surface.title} beforeAfter={(surface.props as any).beforeAfter} recoveredDevices={(surface.props as any).recoveredDevices} timeline={(surface.props as any).timeline} recoverySeries={(surface.props as any).recoverySeries} recoveryLabels={(surface.props as any).recoveryLabels} />;
+
+    if (currentSurface.component === 'RcaPanel') {
+      return (
+        <RcaPanel
+          title={currentSurface.title}
+          confidence={(currentSurface.props as any).confidence}
+          rootCause={(currentSurface.props as any).rootCause}
+          tree={(currentSurface.props as any).tree}
+          propagation={(currentSurface.props as any).propagation}
+        />
+      );
+    }
+
+    return (
+      <ResolutionPanel
+        title={currentSurface.title}
+        beforeAfter={(currentSurface.props as any).beforeAfter}
+        recoveredDevices={(currentSurface.props as any).recoveredDevices}
+        timeline={(currentSurface.props as any).timeline}
+        recoverySeries={(currentSurface.props as any).recoverySeries}
+        recoveryLabels={(currentSurface.props as any).recoveryLabels}
+      />
+    );
+  }
+
+  const renderedSurface = useMemo(() => {
+    if (!surface || !appState.service) return <div className="empty-surface">Awaiting agent-composed UI surface...</div>;
+    return renderSurfaceSchema(surface);
   }, [surface, appState]);
+
+  const renderedComposedSurface = useMemo(() => {
+    if (!composedViews.length) return null;
+
+    return (
+      <div className="composed-surface-stack">
+        {composedViews.includes('topology') ? (
+          <TopologyView
+            title="Impact Topology"
+            mode="impact"
+            nodes={DEFAULT_TOPOLOGY_NODES}
+            edges={DEFAULT_TOPOLOGY_EDGES}
+            blastRadius={{
+              impactedCameras: 1200,
+              impactedGnbs: 3,
+              impactedCells: 4
+            }}
+          />
+        ) : null}
+
+        {composedViews.includes('rca') ? (
+          <RcaPanel
+            title="Root Cause Analysis"
+            confidence={0.92}
+            rootCause="Transport congestion on transport-link-a"
+            tree={DEFAULT_RCA_TREE}
+            propagation="Congestion propagates across the west-metro path, increasing packet handling delays in impacted gNB clusters."
+          />
+        ) : null}
+
+        {composedViews.includes('kpis') ? (
+          <KpiCorrelationPanel
+            title={selectedKpiKeys.length ? 'Requested KPI Correlation' : 'KPI Correlation'}
+            series={DEFAULT_KPI_SERIES}
+            insight="Requested KPIs are rendered with RCA/topology to support side-by-side triage."
+            timestamps={DEFAULT_KPI_TIMESTAMPS}
+            metricKeys={selectedKpiKeys}
+          />
+        ) : null}
+      </div>
+    );
+  }, [composedViews, selectedKpiKeys]);
 
   const renderedKpiPage = useMemo(() => {
     const isLiveKpiSurface = surface?.component === 'KpiCorrelationPanel';
@@ -347,7 +494,7 @@ export default function App() {
       </header>
       {activePage === 'dashboard' ? (
         <main>
-          <section className="panel work-panel">{renderedSurface}</section>
+          <section className="panel work-panel">{renderedComposedSurface ?? renderedSurface}</section>
 
           <aside className="panel timeline-panel">
             <h2>Chat / Agent Timeline</h2>
@@ -365,6 +512,11 @@ export default function App() {
                 <textarea
                   value={operatorInput}
                   onChange={(evt) => setOperatorInput(evt.target.value)}
+                  onKeyDown={(evt) => {
+                    if (evt.key !== 'Enter' || evt.shiftKey) return;
+                    evt.preventDefault();
+                    void submitOperatorInput();
+                  }}
                   placeholder="Write an action or note. Suggested actions appear below."
                   rows={3}
                 />
