@@ -33,6 +33,7 @@ flowchart LR
   U[Operator / Presenter] --> FE[React SPA]
   FE -->|POST /api/session/start| BE[Node.js Mock Agent Runtime]
   FE -->|POST /api/action| BE
+  FE -->|POST /api/operator-input| BE
   BE -->|SSE /api/events\nAG-UI-style event stream| FE
   BE --> DATA[Local Mock Data\nservice, alarms, topology, KPI, RCA, remediation]
   FE --> UI[Dynamic Work Area\nA2UI-style surfaces]
@@ -131,14 +132,14 @@ npm run dev:frontend
 
 ## Mixed-component query examples
 
-The operator input supports composed queries that can request more than one component at once.
+The operator input sends free text to the backend (`POST /api/operator-input`), and the runtime decides whether to map it to an action or to publish an AG-UI `ui.surface.replace` with a composed stack.
 
 - "show me the RCA with the KPIs ( drop rate, packet loss)"
 - "show me the Impact Topology with the KPI ( packet loss )"
 - "display the Impact Topology and include the KPI ( packet loss )"
 - "I want the Impact Topology together with the KPI ( packet loss )"
 - "Show me the topology impact with the KPI Timeline"
-- "If the Resolution Summary been display and user writes \"add the topology in the view\" build the Resolution Summary wiht topology on the bottom"
+- "If the Resolution Summary is already displayed and user writes \"add the topology in the view\", build the Resolution Summary with topology on the bottom"
 
 ## Non-goals
 

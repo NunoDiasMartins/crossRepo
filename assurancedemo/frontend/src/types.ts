@@ -3,14 +3,21 @@ export type SurfaceName =
   | 'impact-topology'
   | 'kpi-correlation'
   | 'root-cause-analysis'
-  | 'resolution-summary';
+  | 'resolution-summary'
+  | 'composed-stack';
 
 export type ActionType = 'VIEW_IMPACT' | 'ANALYZE_KPIS' | 'SHOW_RCA' | 'APPLY_FIX';
 
 export type SurfaceSchema = {
   surface: SurfaceName;
   title: string;
-  component: 'ServiceOverviewCard' | 'TopologyView' | 'KpiCorrelationPanel' | 'RcaPanel' | 'ResolutionPanel';
+  component:
+    | 'ServiceOverviewCard'
+    | 'TopologyView'
+    | 'KpiCorrelationPanel'
+    | 'RcaPanel'
+    | 'ResolutionPanel'
+    | 'ComposedSurfaceStack';
   props: Record<string, unknown>;
 };
 
