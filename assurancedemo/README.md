@@ -137,6 +137,8 @@ The operator input supports composed queries that can request more than one comp
 - "show me the Impact Topology with the KPI ( packet loss )"
 - "display the Impact Topology and include the KPI ( packet loss )"
 - "I want the Impact Topology together with the KPI ( packet loss )"
+- "Show me the topology impact with the KPI Timeline"
+- "If the Resolution Summary been display and user writes \"add the topology in the view\" build the Resolution Summary wiht topology on the bottom"
 
 ## Non-goals
 

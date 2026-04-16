@@ -29,7 +29,7 @@ type SessionStartResponse = {
   initialState: AppState;
 };
 
-type ComposedView = 'topology' | 'rca' | 'kpis';
+type ComposedView = 'topology' | 'rca' | 'kpis' | 'resolution';
 
 let sessionStartPromise: Promise<SessionStartResponse> | null = null;
 let hasLoggedCapabilityAnnouncement = false;
@@ -277,12 +277,14 @@ export default function App() {
 
     const views: ComposedView[] = [];
     const mentionsRca = normalized.includes('rca') || normalized.includes('root cause');
-    const mentionsTopology = normalized.includes('impact topology');
+    const mentionsTopology = normalized.includes('impact topology') || (normalized.includes('topology') && normalized.includes('impact'));
     const mentionsKpi = normalized.includes('kpi');
+    const mentionsResolution = normalized.includes('resolution summary');
 
     if (mentionsTopology) views.push('topology');
     if (mentionsRca) views.push('rca');
     if (mentionsKpi) views.push('kpis');
+    if (mentionsResolution) views.push('resolution');
 
     if (views.length < 2) return null;
 
@@ -297,6 +299,7 @@ export default function App() {
   async function submitOperatorInput() {
     const trimmedInput = operatorInput.trim();
     if (!trimmedInput) return;
+    const normalizedInput = trimmedInput.toLowerCase();
 
     const matchedAction = resolveActionFromText(trimmedInput);
     if (matchedAction) {
@@ -305,8 +308,28 @@ export default function App() {
       return;
     }
 
+    const isResolutionVisible = surface?.component === 'ResolutionPanel';
+    const shouldAppendTopologyToResolution =
+      isResolutionVisible &&
+      normalizedInput.includes('topology') &&
+      (normalizedInput.includes('add') || normalizedInput.includes('include')) &&
+      normalizedInput.includes('view');
+
+    if (shouldAppendTopologyToResolution) {
+      setComposedViews(['resolution', 'topology']);
+      setSelectedKpiKeys([]);
+      setTimeline((prev) => [
+        ...prev,
+        {
+          kind: 'event',
+          text: 'Composed surface request detected: resolution + topology',
+          badge: 'UI compose'
+        }
+      ]);
+    }
+
     const composedIntent = parseComposedViews(trimmedInput);
-    if (composedIntent) {
+    if (composedIntent && !shouldAppendTopologyToResolution) {
       setComposedViews(composedIntent.views);
       setSelectedKpiKeys(composedIntent.kpiKeys);
       setTimeline((prev) => [
@@ -396,6 +419,17 @@ export default function App() {
 
     return (
       <div className="composed-surface-stack">
+        {composedViews.includes('resolution') && surface?.component === 'ResolutionPanel' ? (
+          <ResolutionPanel
+            title={surface.title}
+            beforeAfter={(surface.props as any).beforeAfter}
+            recoveredDevices={(surface.props as any).recoveredDevices}
+            timeline={(surface.props as any).timeline}
+            recoverySeries={(surface.props as any).recoverySeries}
+            recoveryLabels={(surface.props as any).recoveryLabels}
+          />
+        ) : null}
+
         {composedViews.includes('topology') ? (
           <TopologyView
             title="Impact Topology"
