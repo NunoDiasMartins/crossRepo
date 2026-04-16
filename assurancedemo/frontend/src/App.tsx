@@ -23,6 +23,13 @@ const capabilityAnnouncement = [
 
 const API = 'http://localhost:8787';
 type TopLevelPage = 'dashboard' | 'kpis' | 'topology';
+type SessionStartResponse = {
+  sessionId: string;
+  initialState: AppState;
+};
+
+let sessionStartPromise: Promise<SessionStartResponse> | null = null;
+let hasLoggedCapabilityAnnouncement = false;
 
 const DEFAULT_KPI_TIMESTAMPS = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '23:59'];
 
@@ -71,16 +78,19 @@ export default function App() {
 
   useEffect(() => {
     async function start() {
-      setTimeline((prev) => [
-        ...prev,
-        {
-          kind: 'user',
-          text: `UI capability handshake: ${capabilityAnnouncement.join(', ')}`,
-          badge: 'UI → Agent'
-        }
-      ]);
+      if (!hasLoggedCapabilityAnnouncement) {
+        hasLoggedCapabilityAnnouncement = true;
+        setTimeline((prev) => [
+          ...prev,
+          {
+            kind: 'user',
+            text: `UI capability handshake: ${capabilityAnnouncement.join(', ')}`,
+            badge: 'UI → Agent'
+          }
+        ]);
+      }
 
-      const res = await fetch(`${API}/api/session/start`, {
+      sessionStartPromise ??= fetch(`${API}/api/session/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -90,8 +100,15 @@ export default function App() {
           },
           uiCapabilities: ['ServiceOverviewCard', 'TopologyView', 'KpiCorrelationPanel', 'RcaPanel', 'ResolutionPanel']
         })
+      }).then(async (res) => {
+        if (!res.ok) {
+          throw new Error(`Session start failed with status ${res.status}`);
+        }
+
+        return (await res.json()) as SessionStartResponse;
       });
-      const data = await res.json();
+
+      const data = await sessionStartPromise;
       setSessionId(data.sessionId);
       setAppState(data.initialState);
     }
