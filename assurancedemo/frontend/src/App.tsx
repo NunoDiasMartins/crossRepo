@@ -67,6 +67,7 @@ export default function App() {
   const [activePage, setActivePage] = useState<TopLevelPage>('dashboard');
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [suggestedActions, setSuggestedActions] = useState<ActionType[]>([]);
+  const [operatorInput, setOperatorInput] = useState('');
   const timelineScrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -201,6 +202,35 @@ export default function App() {
     });
   }
 
+  function resolveActionFromText(input: string): ActionType | null {
+    const normalized = input.trim().toLowerCase();
+    if (!normalized) return null;
+
+    const directMatch = (Object.entries(labels) as [ActionType, string][])
+      .find(([, label]) => label.toLowerCase() === normalized)?.[0];
+    if (directMatch) return directMatch;
+
+    const suggestedMatch = suggestedActions.find((action) => labels[action].toLowerCase() === normalized);
+    if (suggestedMatch) return suggestedMatch;
+
+    return null;
+  }
+
+  async function submitOperatorInput() {
+    const trimmedInput = operatorInput.trim();
+    if (!trimmedInput) return;
+
+    const matchedAction = resolveActionFromText(trimmedInput);
+    if (matchedAction) {
+      setOperatorInput('');
+      await sendAction(matchedAction);
+      return;
+    }
+
+    setTimeline((prev) => [...prev, { kind: 'user', text: trimmedInput, badge: 'Operator note' }]);
+    setOperatorInput('');
+  }
+
   const renderedSurface = useMemo(() => {
     if (!surface || !appState.service) return <div className="empty-surface">Awaiting agent-composed UI surface...</div>;
     if (surface.component === 'ServiceOverviewCard') {
@@ -313,10 +343,26 @@ export default function App() {
               ))}
             </div>
             <div className="timeline-actions">
-              <h4>Recommended actions</h4>
-              <div className="actions">
+              <h4>Operator input</h4>
+              <div className="operator-input">
+                <textarea
+                  value={operatorInput}
+                  onChange={(evt) => setOperatorInput(evt.target.value)}
+                  placeholder="Write an action or note. Suggested actions appear below."
+                  rows={3}
+                />
+                <button onClick={submitOperatorInput} disabled={!operatorInput.trim()}>
+                  Send
+                </button>
+              </div>
+              <div className="action-suggestions">
                 {suggestedActions.map((action) => (
-                  <button key={action} onClick={() => sendAction(action)}>
+                  <button
+                    key={action}
+                    type="button"
+                    className="suggestion-chip"
+                    onClick={() => setOperatorInput(labels[action])}
+                  >
                     {labels[action]}
                   </button>
                 ))}
@@ -333,4 +379,3 @@ export default function App() {
     </div>
   );
 }
-
